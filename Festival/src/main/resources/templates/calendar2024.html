@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${year} + '년 ' + ${month} + '월 축제 캘린더'">캘린더</title>
+</head>
+<body>
+<h1 th:text="${year} + '년 ' + ${month} + '월 축제 캘린더'">2024년 축제 캘린더</h1>
+
+<form th:action="@{/festivals/2024/calendar}" method="get">
+    연도: <input type="number" name="year" th:value="${year}">
+    월: <input type="number" name="month" th:value="${month}">
+    <button type="submit">조회</button>
+</form>
+
+<hr>
+
+<ul>
+    <li th:each="f : ${festivals}">
+        <span th:text="${f.fstvlBeginDe}"></span>
+        ~
+        <span th:text="${f.fstvlEndDe}"></span>
+        :
+        <strong th:text="${f.fcltyNm}">축제 이름</strong>
+        (<span th:text="${f.ctprvnNm} + ' ' + ${f.signguNm}">지역</span>)
+    </li>
+</ul>
+
+<a th:href="@{/festivals/2024}">전체 목록으로</a>
+</body>
+</html>

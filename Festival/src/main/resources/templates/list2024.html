@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>2024 축제 목록</title>
+</head>
+<body>
+<h1>2024 축제 목록</h1>
+
+<a th:href="@{/festivals/2024/calendar}">캘린더 보기</a>
+
+<table border="1">
+    <tr>
+        <th>이름</th>
+        <th>지역</th>
+        <th>기간</th>
+        <th>장소</th>
+    </tr>
+    <tr th:each="f : ${festivals}">
+        <td th:text="${f.fcltyNm}">이름</td>
+        <td th:text="${f.ctprvnNm} + ' ' + ${f.signguNm}">지역</td>
+        <td th:text="${f.fstvlBeginDe} + ' ~ ' + ${f.fstvlEndDe}">기간</td>
+        <td th:text="${f.adstrdNm}">장소</td>
+    </tr>
+</table>
+</body>
+</html>
