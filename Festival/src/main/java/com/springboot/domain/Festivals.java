@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor                              // 모든 필드 받는 생성자
 @Entity
 @Table(name = "festival_2024")
-public class festivales {
+public class Festivals {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

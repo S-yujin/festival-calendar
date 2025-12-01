@@ -7,6 +7,12 @@
 <body>
 <h1>2024 축제 목록</h1>
 
+<form th:action="@{/festivals/search}" method="get">
+    <input type="text" name="q" placeholder="축제명 / 내용 검색"
+           th:value="${keyword}">
+    <button type="submit">검색</button>
+</form>
+
 <a th:href="@{/festivals/2024/calendar}">캘린더 보기</a>
 
 <table border="1">
@@ -17,7 +23,10 @@
         <th>장소</th>
     </tr>
     <tr th:each="f : ${festivals}">
-        <td th:text="${f.fcltyNm}">이름</td>
+		<td>
+			<a th:href="@{/festivals/{id}(id=${f.id})}"
+			   th:text="${f.fcltyNm}">축제명</a>
+		</td>
         <td th:text="${f.ctprvnNm} + ' ' + ${f.signguNm}">지역</td>
         <td th:text="${f.fstvlBeginDe} + ' ~ ' + ${f.fstvlEndDe}">기간</td>
         <td th:text="${f.adstrdNm}">장소</td>
