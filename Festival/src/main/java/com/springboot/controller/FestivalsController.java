@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/festivals")   // 공통 prefix
@@ -36,20 +38,25 @@ public class FestivalsController {
     // 연/월별 캘린더
     @GetMapping("/2024/calendar")
     public String calendar2024(
-            @RequestParam(name = "year",  defaultValue = "2024") int year,
-            @RequestParam(name = "month", defaultValue = "10")   int month,
-            Model model
-    ) {
+            @RequestParam(name = "year", defaultValue = "2024") int year,
+            @RequestParam(name = "month", defaultValue = "12") int month,
+            Model model) {
+
         LocalDate start = LocalDate.of(year, month, 1);
         LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
 
         List<Festivals> list = repository.findByFstvlBeginDeBetween(start, end);
 
-        model.addAttribute("festivals", list);
+        // 날짜별로 축제 묶기
+        Map<LocalDate, List<Festivals>> byDate = list.stream()
+                .collect(Collectors.groupingBy(Festivals::getFstvlBeginDe));
+
+        model.addAttribute("calendarStart", start);
+        model.addAttribute("calendarEnd", end);
+        model.addAttribute("festivalMap", byDate);
         model.addAttribute("year", year);
         model.addAttribute("month", month);
-
-        return "calendar2024";   // templates/calendar2024.html
+        return "calendar2024";
     }
     
     // 상세 페이지

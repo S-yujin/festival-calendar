@@ -15,17 +15,45 @@
 
 <hr>
 
-<ul>
-    <li th:each="f : ${festivals}">
-        <span th:text="${f.fstvlBeginDe}"></span>
-        ~
-        <span th:text="${f.fstvlEndDe}"></span>
-        :
-        <strong th:text="${f.fcltyNm}">축제 이름</strong>
-        (<span th:text="${f.ctprvnNm} + ' ' + ${f.signguNm}">지역</span>)
-    </li>
-</ul>
+<table class="calendar">
+    <tr>
+        <th>일</th>
+        <th>월</th>
+        <th>화</th>
+        <th>수</th>
+        <th>목</th>
+        <th>금</th>
+        <th>토</th>
+    </tr>
 
+	<tr th:with="
+	        start=${calendarStart},
+	        end=${calendarEnd},
+	        firstDow=${#temporals.dayOfWeek(start)}">
+
+        <!-- 앞쪽 빈칸 -->
+        <td th:each="i : ${#numbers.sequence(1, firstDow - 1)}"></td>
+
+        <!-- 날짜 칸 -->
+        <td th:each="d : ${#numbers.sequence(1, end.dayOfMonth)}">
+            <div th:text="${d}">1</div>
+
+            <div th:each="f : ${festivalMap[calendarStart.withDayOfMonth(d)]}">
+                <a th:href="@{'/festivals/' + ${f.id}}"
+                   th:text="${f.fcltyNm}">축제명</a>
+                <br/>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<br/>
+
+<a th:href="@{'/festivals/2024/calendar'(year=${year}, month=${month-1})}">이전달</a>
+|
+<a th:href="@{'/festivals/2024/calendar'(year=${year}, month=${month+1})}">다음달</a>
+|
 <a th:href="@{/festivals/2024}">전체 목록으로</a>
+
 </body>
 </html>

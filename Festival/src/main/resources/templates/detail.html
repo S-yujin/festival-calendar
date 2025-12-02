@@ -7,41 +7,37 @@
 <body>
 <h1 th:text="${festival.fcltyNm}">축제 이름</h1>
 
-<p>
-    <strong>지역:</strong>
-    <span th:text="${festival.ctprvnNm} + ' ' + ${festival.signguNm}">지역</span>
-</p>
+<ul>
+    <li>분류: <span th:text="${festival.lclasNm}"></span> / 
+              <span th:text="${festival.mlsfcNm}"></span></li>
+    <li>기간: 
+        <span th:text="${festival.fstvlBeginDe}"></span>
+        ~
+        <span th:text="${festival.fstvlEndDe}"></span>
+    </li>
+    <li>지역: 
+        <span th:text="${festival.ctprvnNm}"></span>
+        <span th:text="${festival.signguNm}"></span>
+    </li>
+    <li>주소(법정동): <span th:text="${festival.legaldongNm}"></span></li>
+    <li>상세 주소(행정동): <span th:text="${festival.adstrdNm}"></span></li>
+    <li>위치: 위도 <span th:text="${festival.fcltyLa}"></span>,
+             경도 <span th:text="${festival.fcltyLo}"></span></li>
+    <li>전화번호: <span th:text="${festival.telNo}"></span></li>
+    <li>홈페이지: 
+        <a th:if="${festival.hmpgAddr != null}"
+           th:href="${festival.hmpgAddr}"
+           target="_blank"
+           th:text="${festival.hmpgAddr}">홈페이지</a>
+    </li>
+</ul>
+
+<h3>축제 소개</h3>
+<p th:text="${festival.fstvlCn}">내용</p>
 
 <p>
-    <strong>기간:</strong>
-    <span th:text="${festival.fstvlBeginDe}"></span>
-    ~
-    <span th:text="${festival.fstvlEndDe}"></span>
+    <a th:href="@{/festivals/2024}">전체 목록으로</a> |
+    <a th:href="@{/festivals/2024/calendar}">캘린더로</a>
 </p>
-
-<p>
-    <strong>주소:</strong>
-    <span th:text="${festival.adstrdNm}"></span>
-</p>
-
-<p>
-    <strong>내용:</strong><br>
-    <span th:text="${festival.fstvlCn}">축제 설명</span>
-</p>
-
-<p>
-    <strong>전화번호:</strong>
-    <span th:text="${festival.telNo}">전화번호</span>
-</p>
-
-<p th:if="${festival.hmpgAddr != null}">
-    <strong>홈페이지:</strong>
-    <a th:href="${festival.hmpgAddr}"
-       th:text="${festival.hmpgAddr}" target="_blank">홈페이지</a>
-</p>
-
-<hr>
-<a th:href="@{/festivals/2024}">목록으로</a>
-<a th:href="@{/festivals/2024/calendar}">캘린더로</a>
 </body>
 </html>
