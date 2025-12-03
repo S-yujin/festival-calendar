@@ -12,7 +12,7 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA용 기본 생성자 자동 생성
 @AllArgsConstructor                              // 모든 필드 받는 생성자
 @Entity
-@Table(name = "festival_2024")
+@Table(name = "festival")
 public class Festivals {
 
     @Id

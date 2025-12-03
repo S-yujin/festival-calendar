@@ -8,14 +8,14 @@
 <h1 th:text="${festival.fcltyNm}">축제 이름</h1>
 
 <ul>
-    <li>분류: <span th:text="${festival.lclasNm}"></span> / 
+    <li>분류: <span th:text="${festival.lclasNm}"></span> /
               <span th:text="${festival.mlsfcNm}"></span></li>
-    <li>기간: 
+    <li>기간:
         <span th:text="${festival.fstvlBeginDe}"></span>
         ~
         <span th:text="${festival.fstvlEndDe}"></span>
     </li>
-    <li>지역: 
+    <li>지역:
         <span th:text="${festival.ctprvnNm}"></span>
         <span th:text="${festival.signguNm}"></span>
     </li>
@@ -24,7 +24,7 @@
     <li>위치: 위도 <span th:text="${festival.fcltyLa}"></span>,
              경도 <span th:text="${festival.fcltyLo}"></span></li>
     <li>전화번호: <span th:text="${festival.telNo}"></span></li>
-    <li>홈페이지: 
+    <li>홈페이지:
         <a th:if="${festival.hmpgAddr != null}"
            th:href="${festival.hmpgAddr}"
            target="_blank"
@@ -34,6 +34,32 @@
 
 <h3>축제 소개</h3>
 <p th:text="${festival.fstvlCn}">내용</p>
+
+<!-- ================== 예상 개최 시기 블럭 ================== -->
+<h3>예상 개최 시기</h3>
+
+<div th:if="${bestMonth != null}">
+    <p>
+        이 축제는 최근 6년(2019~2024년) 동안
+        <span th:text="${totalCount}">0</span>회 열렸고,
+        그 중 <strong th:text="${bestMonth}">10</strong>월에
+        가장 자주 개최되었습니다
+        (<span th:text="${bestCount}">0</span>회).
+    </p>
+
+    <h4>월별 개최 횟수</h4>
+    <ul>
+        <li th:each="row : ${monthStats}">
+            <span th:text="${row[0]}">10</span>월 :
+            <span th:text="${row[1]}">0</span>회
+        </li>
+    </ul>
+</div>
+
+<div th:if="${bestMonth == null}">
+    <p>축제 이력이 부족해 예상 개최 시기를 계산할 수 없습니다.</p>
+</div>
+<!-- ======================================================= -->
 
 <p>
     <a th:href="@{/festivals/2024}">전체 목록으로</a> |
