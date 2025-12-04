@@ -36,29 +36,14 @@
 <p th:text="${festival.fstvlCn}">내용</p>
 
 <!-- ================== 예상 개최 시기 블럭 ================== -->
-<h3>예상 개최 시기</h3>
-
-<div th:if="${bestMonth != null}">
-    <p>
-        이 축제는 최근 6년(2019~2024년) 동안
-        <span th:text="${totalCount}">0</span>회 열렸고,
-        그 중 <strong th:text="${bestMonth}">10</strong>월에
-        가장 자주 개최되었습니다
-        (<span th:text="${bestCount}">0</span>회).
-    </p>
-
-    <h4>월별 개최 횟수</h4>
-    <ul>
-        <li th:each="row : ${monthStats}">
-            <span th:text="${row[0]}">10</span>월 :
-            <span th:text="${row[1]}">0</span>회
-        </li>
-    </ul>
-</div>
-
-<div th:if="${bestMonth == null}">
-    <p>축제 이력이 부족해 예상 개최 시기를 계산할 수 없습니다.</p>
-</div>
+<h3>2025년 예상 개최 시기</h3>
+<p th:if="${expectedPeriod2025 != null}"
+   th:text="${expectedPeriod2025}">
+    예측 데이터
+</p>
+<p th:if="${expectedPeriod2025 == null}">
+    2019~2024년 이력이 부족하여 개최 시기를 추정하기 어렵습니다.
+</p>
 <!-- ======================================================= -->
 
 <p>

@@ -1,6 +1,7 @@
 package com.springboot.controller;
 
 import com.springboot.domain.Festivals;
+import com.springboot.service.FestivalPatternService;
 import com.springboot.repository.FestivalsRepository;
 
 import org.springframework.stereotype.Controller;
@@ -22,9 +23,12 @@ import java.util.Map;
 public class FestivalsController {
 
     private final FestivalsRepository repository;
+	private final FestivalPatternService patternService;
 
-    public FestivalsController(FestivalsRepository repository) {
+    public FestivalsController(FestivalsRepository repository,
+    						   FestivalPatternService patternService) {
         this.repository = repository;
+        this.patternService = patternService;
     }
 
     //전체 목록
@@ -59,38 +63,19 @@ public class FestivalsController {
         return "calendar2024";
     }
     
-    // 상세페이지
+ // 상세 페이지
     @GetMapping("/{id}")
     public String detail(@PathVariable("id") Long id, Model model) {
         Festivals festival = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        // 이 축제 이름으로 월별 개최 횟수 통계 조회
-        List<Object[]> rows = repository.countByMonthForFestivalName(festival.getFcltyNm());
-
-        Integer bestMonth = null;   // 가장 자주 열린 달
-        long bestCount = 0L;
-        long totalCount = 0L;
-
-        for (Object[] row : rows) {
-            int month = ((Number) row[0]).intValue();   // MONTH
-            long cnt   = ((Number) row[1]).longValue(); // COUNT
-
-            totalCount += cnt;
-
-            if (bestMonth == null) {    // rows가 count desc 순서라 첫 번째가 최다
-                bestMonth = month;
-                bestCount = cnt;
-            }
-        }
-
         model.addAttribute("festival", festival);
-        model.addAttribute("monthStats", rows);   // [월, 횟수] 리스트
-        model.addAttribute("bestMonth", bestMonth);
-        model.addAttribute("bestCount", bestCount);
-        model.addAttribute("totalCount", totalCount);
 
-        return "detail";   // detail.html
+        // 2019~2024 이력으로 2025년 예상 개최 시기 문장 생성
+        String expectedPeriod = patternService.estimateExpectedPeriod2025(festival.getFcltyNm());
+        model.addAttribute("expectedPeriod2025", expectedPeriod);
+
+        return "detail";   // templates/detail.html
     }
     
     // 검색
