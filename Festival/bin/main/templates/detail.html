@@ -36,19 +36,21 @@
 <p th:text="${festival.fstvlCn}">내용</p>
 
 <!-- ================== 예상 개최 시기 블럭 ================== -->
-<h3>2025년 예상 개최 시기</h3>
-<p th:if="${expectedPeriod2025 != null}"
-   th:text="${expectedPeriod2025}">
-    예측 데이터
-</p>
-<p th:if="${expectedPeriod2025 == null}">
-    2019~2024년 이력이 부족하여 개최 시기를 추정하기 어렵습니다.
-</p>
+<div th:if="${expectedPeriod != null}">
+    <h3>예상 개최 시기 ([[${expectedPeriod.targetYear}]]년)</h3>
+    <p>
+        이 축제는 보통
+		<strong th:text="${expectedPeriod.month}">10</strong>월
+		<strong th:text="${expectedPeriod.weekOfMonth}">4</strong>주차
+		<strong th:text="${expectedPeriod.dayOfWeekKo}">토</strong>요일
+		(<span th:text="${expectedPeriod.sampleCount}">0</span>년치 데이터 기준)
+    </p>
+</div>
 <!-- ======================================================= -->
 
 <p>
-    <a th:href="@{/festivals/2024}">전체 목록으로</a> |
-    <a th:href="@{/festivals/2024/calendar}">캘린더로</a>
+    <a th:href="@{/festivals}">전체 목록으로</a>
+    <a th:href="@{/festivals/calendar(year=${year}, month=${month})}">캘린더로</a>
 </p>
 </body>
 </html>

@@ -31,27 +31,34 @@ public class FestivalsController {
         this.patternService = patternService;
     }
 
-    //전체 목록
-    @GetMapping("/2024")
-    public String list2024(Model model) {
-        List<Festivals> list = repository.findAll();
+    // 올해(현재 연도) 전체 목록
+    @GetMapping
+    public String listCurrentYear(Model model) {
+
+        int year = LocalDate.now().getYear();        // 지금 연도 (예: 2025)
+        List<Festivals> list = repository.findByYear(year);
+
         model.addAttribute("festivals", list);
-        return "list2024";       // templates/list2024.html
+        model.addAttribute("year", year);            // 화면에서 제목에 쓰라고 같이 넘김
+
+        return "list2024";   //나중에 listByYear 로 바꾸기
     }
-    
-    // 연/월별 캘린더
-    @GetMapping("/2024/calendar")
-    public String calendar2024(
-            @RequestParam(name = "year", defaultValue = "2024") int year,
-            @RequestParam(name = "month", defaultValue = "12") int month,
+   
+    // 연/월별 캘린더 (현재 연도 기준)
+    @GetMapping("/calendar")
+    public String calendar(
+            @RequestParam(name = "year", required = false) Integer yearParam,
+            @RequestParam(name = "month", required = false) Integer monthParam,
             Model model) {
+
+        int year = (yearParam != null) ? yearParam : LocalDate.now().getYear();
+        int month = (monthParam != null) ? monthParam : LocalDate.now().getMonthValue();
 
         LocalDate start = LocalDate.of(year, month, 1);
         LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
 
         List<Festivals> list = repository.findByFstvlBeginDeBetween(start, end);
 
-        // 날짜별로 축제 묶기
         Map<LocalDate, List<Festivals>> byDate = list.stream()
                 .collect(Collectors.groupingBy(Festivals::getFstvlBeginDe));
 
@@ -60,10 +67,12 @@ public class FestivalsController {
         model.addAttribute("festivalMap", byDate);
         model.addAttribute("year", year);
         model.addAttribute("month", month);
-        return "calendar2024";
+
+        return "calendar2024";   // calendar 로 바꾸기
     }
+
     
- // 상세 페이지
+    // 상세 페이지
     @GetMapping("/{id}")
     public String detail(@PathVariable("id") Long id, Model model) {
         Festivals festival = repository.findById(id)
@@ -71,9 +80,9 @@ public class FestivalsController {
 
         model.addAttribute("festival", festival);
 
-        // 2019~2024 이력으로 2025년 예상 개최 시기 문장 생성
-        String expectedPeriod = patternService.estimateExpectedPeriod2025(festival.getFcltyNm());
-        model.addAttribute("expectedPeriod2025", expectedPeriod);
+        // 예상 개최 시기 계산
+        patternService.predictNextYearByName(festival.getFcltyNm())
+                .ifPresent(expected -> model.addAttribute("expectedPeriod", expected));
 
         return "detail";   // templates/detail.html
     }

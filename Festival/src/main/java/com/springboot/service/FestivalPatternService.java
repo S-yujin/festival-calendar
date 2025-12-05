@@ -7,7 +7,8 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
+
+// 축제 이름 히스토리를 보고 "예상 개최 시기" 패턴을 뽑는 서비스
 
 @Service
 public class FestivalPatternService {
@@ -18,68 +19,152 @@ public class FestivalPatternService {
         this.repository = repository;
     }
 
-    /**
-     * 2019~2024년 이력을 가지고
-     * "보통 X월 Y주차 Z요일 전후 (2019~2024년 기준, 2025년에도 비슷한 시기를 예상)"
-     * 이런 문장을 만들어 돌려준다. 이력이 부족하면 null.
-     */
-    public String estimateExpectedPeriod2025(String fcltyNm) {
+    // 결과 DTO
+    public static class ExpectedPeriod {
+        private final String baseName;
+        private final int sampleCount;
+        private final int targetYear;
+        private final int month;
+        private final int weekOfMonth;
+        private final DayOfWeek dayOfWeek;
+        private final String dayOfWeekKo;   // 한글 요일
 
-        List<Festivals> all = repository.findByFcltyNm(fcltyNm);
-
-        // 2019~2024년 사이의 시작일만 수집
-        List<LocalDate> dates = all.stream()
-                .map(Festivals::getFstvlBeginDe)
-                .filter(Objects::nonNull)
-                .filter(d -> {
-                    int year = d.getYear();
-                    return year >= 2019 && year <= 2024;
-                })
-                .toList();
-
-        // 데이터가 너무 적으면 예상 못 한다
-        if (dates.size() < 2) {
-            return null;
+        public ExpectedPeriod(String baseName, int sampleCount,
+                              int targetYear, int month,
+                              int weekOfMonth, DayOfWeek dayOfWeek,
+                              String dayOfWeekKo) {
+            this.baseName = baseName;
+            this.sampleCount = sampleCount;
+            this.targetYear = targetYear;
+            this.month = month;
+            this.weekOfMonth = weekOfMonth;
+            this.dayOfWeek = dayOfWeek;
+            this.dayOfWeekKo = dayOfWeekKo;
         }
 
-        // "월-주차-요일번호" 형태의 key로 몇 번 나왔는지 카운트
-        Map<String, Long> counts = dates.stream()
-                .collect(Collectors.groupingBy(d -> {
-                    int month = d.getMonthValue();
-                    int weekOfMonth = (d.getDayOfMonth() - 1) / 7 + 1; // 1~4/5
-                    int dow = d.getDayOfWeek().getValue(); // 1=월 ~ 7=일
-                    return month + "-" + weekOfMonth + "-" + dow;
-                }, Collectors.counting()));
+        public String getBaseName() { return baseName; }
+        public int getSampleCount() { return sampleCount; }
+        public int getTargetYear() { return targetYear; }
+        public int getMonth() { return month; }
+        public int getWeekOfMonth() { return weekOfMonth; }
+        public DayOfWeek getDayOfWeek() { return dayOfWeek; }
+        public String getDayOfWeekKo() { return dayOfWeekKo; }
+    }
 
-        Map.Entry<String, Long> best = counts.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .orElse(null);
+    // (월, 주차, 요일) 조합 키
+    private static class Key {
+        final int month;
+        final int weekOfMonth;
+        final DayOfWeek dayOfWeek;
 
-        if (best == null) {
-            return null;
+        Key(int month, int weekOfMonth, DayOfWeek dayOfWeek) {
+            this.month = month;
+            this.weekOfMonth = weekOfMonth;
+            this.dayOfWeek = dayOfWeek;
         }
 
-        String[] parts = best.getKey().split("-");
-        int month = Integer.parseInt(parts[0]);
-        int weekOfMonth = Integer.parseInt(parts[1]);
-        int dowVal = Integer.parseInt(parts[2]);
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Key)) return false;
+            Key key = (Key) o;
+            return month == key.month &&
+                   weekOfMonth == key.weekOfMonth &&
+                   dayOfWeek == key.dayOfWeek;
+        }
 
-        String dowKo = switch (dowVal) {
-            case 1 -> "월";
-            case 2 -> "화";
-            case 3 -> "수";
-            case 4 -> "목";
-            case 5 -> "금";
-            case 6 -> "토";
-            case 7 -> "일";
-            default -> "";
+        @Override
+        public int hashCode() {
+            return Objects.hash(month, weekOfMonth, dayOfWeek);
+        }
+    }
+
+     // 축제 이름을 기준으로 과거 데이터를 모아서
+     // "가장 많이 열린 (월, 주차, 요일) 패턴"을 찾고,
+     // 가장 최근 연도 + 1년을 targetYear로 해서 반환.
+    
+    public Optional<ExpectedPeriod> predictNextYearByName(String festivalName) {
+
+        String baseName = normalizeName(festivalName);
+
+        // 이 이름이 들어간 모든 축제 이력
+        List<Festivals> history =
+                repository.findByFcltyNmContainingOrderByFstvlBeginDeAsc(baseName);
+
+        if (history.size() < 2) {
+            // 데이터가 너무 적으면 패턴 못 낸다고 판단
+            return Optional.empty();
+        }
+
+        // (월, 주차, 요일) 조합별로 카운트
+        Map<Key, Long> counts = new HashMap<>();
+
+        for (Festivals f : history) {
+            LocalDate d = f.getFstvlBeginDe();
+            if (d == null) continue;
+
+            int month = d.getMonthValue();
+            int weekOfMonth = (d.getDayOfMonth() - 1) / 7 + 1; // 1~4(5)
+            DayOfWeek dow = d.getDayOfWeek();
+
+            Key key = new Key(month, weekOfMonth, dow);
+            counts.put(key, counts.getOrDefault(key, 0L) + 1L);
+        }
+
+        if (counts.isEmpty()) {
+            return Optional.empty();
+        }
+
+        // 가장 많이 나온 조합 선택
+        Map.Entry<Key, Long> best = null;
+        for (Map.Entry<Key, Long> e : counts.entrySet()) {
+            if (best == null || e.getValue() > best.getValue()) {
+                best = e;
+            }
+        }
+
+        Key k = best.getKey();
+
+        int latestYear = history.stream()
+                .filter(f -> f.getFstvlBeginDe() != null)
+                .map(f -> f.getFstvlBeginDe().getYear())
+                .max(Integer::compareTo)
+                .orElse(LocalDate.now().getYear());
+
+        int targetYear = latestYear + 1;
+
+        String dowKo = toKorean(k.dayOfWeek);   // 한글 요일 변환
+
+        return Optional.of(new ExpectedPeriod(
+                baseName,
+                history.size(),
+                targetYear,
+                k.month,
+                k.weekOfMonth,
+                k.dayOfWeek,
+                dowKo
+        ));
+    }
+
+    // 축제 이름 간단 정규화 (회차, 연도 제거)
+    private String normalizeName(String name) {
+        if (name == null) return "";
+        String n = name;
+        n = n.replaceAll("제\\d+회", "");   // "제10회"
+        n = n.replaceAll("\\d{4}", "");    // "2024"
+        return n.trim();
+    }
+
+    // DayOfWeek -> 한글 요일 한 글자
+    private String toKorean(DayOfWeek dow) {
+        return switch (dow) {
+            case MONDAY    -> "월";
+            case TUESDAY   -> "화";
+            case WEDNESDAY -> "수";
+            case THURSDAY  -> "목";
+            case FRIDAY    -> "금";
+            case SATURDAY  -> "토";
+            case SUNDAY    -> "일";
         };
-
-        // 실제로는 “2019~2024년 이력 기준으로 2025년도 비슷한 시기 예상” 이라는 의미
-        return String.format(
-                "보통 %d월 %d주차 %s요일 전후에 열렸습니다. " +
-                "(2019~2024년 이력 기준, 2025년에도 비슷한 시기를 예상할 수 있습니다.)",
-                month, weekOfMonth, dowKo
-        );
     }
 }
