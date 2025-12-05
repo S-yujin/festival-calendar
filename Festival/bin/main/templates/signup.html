@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+</head>
+<body>
+<h1>회원가입</h1>
+
+<form th:action="@{/auth/signup}" th:object="${signupForm}" method="post">
+    <div>
+        <label>이름</label>
+        <input type="text" th:field="*{name}"/>
+        <div th:if="${#fields.hasErrors('name')}"
+             th:errors="*{name}"></div>
+    </div>
+
+    <div>
+        <label>이메일</label>
+        <input type="text" th:field="*{email}"/>
+        <div th:if="${#fields.hasErrors('email')}"
+             th:errors="*{email}"></div>
+    </div>
+
+    <div>
+        <label>비밀번호</label>
+        <input type="password" th:field="*{password}"/>
+        <div th:if="${#fields.hasErrors('password')}"
+             th:errors="*{password}"></div>
+    </div>
+
+    <div>
+        <label>비밀번호 확인</label>
+        <input type="password" th:field="*{passwordConfirm}"/>
+        <div th:if="${#fields.hasErrors('passwordConfirm')}"
+             th:errors="*{passwordConfirm}"></div>
+    </div>
+
+    <div>
+        <button type="submit">가입하기</button>
+    </div>
+</form>
+
+<p>
+    이미 계정이 있으신가요?
+    <a th:href="@{/auth/login}">로그인</a>
+</p>
+
+</body>
+</html>
