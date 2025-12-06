@@ -34,12 +34,20 @@ public class FestivalsController {
     // 메인 페이지
     @GetMapping
     public String festivalsHome(Model model) {
-    	int year = LocalDate.now().getYear();
+    	// 오늘 날짜 기준
+    	LocalDate today = LocalDate.now();
     	
-    	 // 필요하면 올해 축제 몇 개만 썸네일로 보여주기
-        List<Festivals> list = repository.findByYear(year);
-        model.addAttribute("year", year);
-        model.addAttribute("sampleFestivals", list.stream().limit(5).toList());
+    	// 오늘 진행 중인 축제 전체 조회
+    	List<Festivals> ongoingAll = repository
+    			.findByFstvlBeginDeLessThanEqualAndFstvlEndDeGreaterThanEqual(today, today);
+    	
+    	//메인에는 4개만 맛보기
+    	 List<Festivals> ongoingPreview = ongoingAll.stream()
+    	            .limit(4)
+    	            .collect(Collectors.toList());
+    	 
+        model.addAttribute("today", today);
+        model.addAttribute("ongoingFestivals", ongoingPreview);
 
         return "festivals-home";   // festivals-home.html
     }

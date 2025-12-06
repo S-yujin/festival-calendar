@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>부울경 축제 메인</title>
+    <title>축제 메인</title>
 </head>
 <body>
 <div th:replace="~{fragments/header :: header}"></div>
@@ -18,16 +18,36 @@
         </a>
     </div>
 
-    <section style="margin-top: 2rem;">
-        <h2>올해 축제 미리보기</h2>
-        <ul>
-            <li th:each="f : ${sampleFestivals}">
-                <a th:href="@{|/festivals/${f.id}|}"
-                   th:text="${f.fcltyNm}">축제 이름</a>
-                <span th:text="${f.fstvlBeginDe}">날짜</span>
-            </li>
-        </ul>
-    </section>
+	section class="ongoing-section">
+	    <h2>🎉 오늘 진행 중인 축제</h2>
+
+	    <!-- 아무 축제도 없을 때 -->
+	    <p th:if="${#lists.isEmpty(ongoingFestivals)}">
+	        오늘 진행 중인 축제가 없습니다.
+	    </p>
+
+	    <!-- 진행 중 축제 있을 때 -->
+	    <div th:if="${!#lists.isEmpty(ongoingFestivals)}" class="ongoing-list">
+	        <div th:each="f : ${ongoingFestivals}" class="festival-card">
+	            <a th:href="@{'/festivals/' + ${f.id}}">
+	                <h3 th:text="${f.fcltyNm}">축제 이름</h3>
+
+	                <p>
+	                    <span th:text="${#temporals.format(f.fstvlBeginDe, 'MM.dd')}"></span>
+	                    ~
+	                    <span th:text="${#temporals.format(f.fstvlEndDe, 'MM.dd')}"></span>
+	                </p>
+
+	                <!-- 장소 같은 거 필드 있으면 추가 -->
+	                <!-- <p th:text="${f.rdnmadr}">장소</p> -->
+	            </a>
+	        </div>
+	    </div>
+
+	    <div class="more-link">
+	        <a th:href="@{/festivals/list}">전체 축제 목록 보기 &raquo;</a>
+	    </div>
+	</section>
 </main>
 
 <div th:replace="~{fragments/footer :: footer}"></div>

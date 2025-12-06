@@ -21,11 +21,13 @@ public interface FestivalsRepository extends JpaRepository<Festivals, Long> {
 
     // 한 달 동안 열리는 축제 (캘린더용)
     List<Festivals> findByFstvlBeginDeBetween(LocalDate start, LocalDate end);
+    
+    // 오늘 기준 진행 중인 축제
+    List<Festivals> findByFstvlBeginDeLessThanEqualAndFstvlEndDeGreaterThanEqual(LocalDate begin, LocalDate end);
 
     // 검색
     List<Festivals> findByFcltyNmContainingIgnoreCaseOrFstvlCnContainingIgnoreCase(
-            String namekeyword,
-            String contentkeyword
+            String namekeyword,String contentkeyword
     );
 
     // “이름 일부”로 과거 히스토리(연도 순) 조회 – 패턴 분석용
