@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>축제 목록</title>
+</head>
+<body>
+	
+	<div th:replace="fragments/header :: siteHeader"></div>
+	<h1 th:text="${year} + '년 축제 목록'">2024년 축제 목록</h1>
+
+	<form th:action="@{/festivals/search}" method="get">
+    	<input type="text" name="q" placeholder="축제명 / 내용 검색"
+				th:value="${keyword}">
+    	<button type="submit">검색</button>
+	</form>
+
+	<a th:href="@{/festivals/calendar(year=${year}, month=${month})}">캘린더보기</a>
+
+	<table border="1">
+	    <tr>
+	        <th>이름</th>
+	        <th>지역</th>
+	        <th>기간</th>
+	        <th>장소</th>
+	    </tr>
+	    <tr th:each="f : ${festivals}">
+			<td>
+				<a th:href="@{/festivals/{id}(id=${f.id})}"
+				   th:text="${f.fcltyNm}">축제명</a>
+			</td>
+	        <td th:text="${f.ctprvnNm} + ' ' + ${f.signguNm}">지역</td>
+	        <td th:text="${f.fstvlBeginDe} + ' ~ ' + ${f.fstvlEndDe}">기간</td>
+	        <td th:text="${f.adstrdNm}">장소</td>
+	    </tr>
+	</table>
+	
+	<div th:replace="~{fragments/footer :: siteFooter}"></div>
+</body>
+</html>

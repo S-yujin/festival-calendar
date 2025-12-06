@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<header th:fragment="siteHeader">
+    <nav class="nav">
+        <!-- 로고 / 홈 링크 -->
+        <a th:href="@{/}" class="logo">Festival Service</a>
+
+        <!-- 오른쪽 메뉴 -->
+        <div class="nav-right">
+
+            <!-- 1) 비로그인 상태: 로그인 / 회원가입 -->
+            <div sec:authorize="isAnonymous()">
+                <a th:href="@{/auth/login}">로그인</a>
+                <a th:href="@{/auth/signup}">회원가입</a>
+            </div>
+
+            <!-- 2) 로그인 상태: OOO님 환영합니다 / 로그아웃 -->
+            <div sec:authorize="isAuthenticated()">
+                <!-- username 이 이메일이면 email님 환영합니다 로 나옴 -->
+                <span th:text="${#authentication.name} + '님 환영합니다'">
+                    OOO님 환영합니다
+                </span>
+				
+				<!-- 마이페이지 -->
+				<a th:href="@{/members/me}" style="margin-left: 8px;">마이페이지</a>
+
+                <form th:action="@{/logout}" method="post" style="display:inline;">
+                    <!-- CSRF 켜져 있을 때만 hidden 넣기 -->
+                    <input th:if="${_csrf != null}" type="hidden"
+                           th:name="${_csrf.parameterName}"
+                           th:value="${_csrf.token}" />
+                    <button type="submit">로그아웃</button>
+                </form>
+            </div>
+
+        </div>
+    </nav>
+</header>
+</body>
+</html>

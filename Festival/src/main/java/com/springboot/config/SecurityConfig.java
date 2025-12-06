@@ -38,18 +38,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // 처음엔 편하게 비활성화 (나중에 필요하면 다시 켜도 됨)
                 .userDetailsService(memberDetailsService)
                 .authorizeHttpRequests(auth -> auth
-                        // 누구나 접근 가능
-                        .requestMatchers(
-                                "/", "/festivals/**",
-                                "/auth/login", "/auth/signup",
-                                "/css/**", "/js/**", "/images/**"
-                        ).permitAll()
-                        // 나머지는 로그인 필요
-                        .anyRequest().authenticated()
-                )
+                        .requestMatchers("/login", "/signup", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/members/**").authenticated()
+                        .anyRequest().permitAll()
+                )       
                 .formLogin(form -> form
                         .loginPage("/auth/login")     // 로그인 페이지 URL
-                        .loginProcessingUrl("/login")  // 로그인 POST 처리 URL
+                        .loginProcessingUrl("/auth/login")  // 로그인 POST 처리 URL
                         .usernameParameter("email")    // 폼에서 쓰는 name
                         .passwordParameter("password")
                         .defaultSuccessUrl("/festivals", true)

@@ -41,7 +41,7 @@ public class FestivalsController {
         model.addAttribute("festivals", list);
         model.addAttribute("year", year);            // 화면에서 제목에 쓰라고 같이 넘김
 
-        return "list2024";   //나중에 listByYear 로 바꾸기
+        return "list";
     }
    
     // 연/월별 캘린더 (현재 연도 기준)
@@ -68,7 +68,7 @@ public class FestivalsController {
         model.addAttribute("year", year);
         model.addAttribute("month", month);
 
-        return "calendar2024";   // calendar 로 바꾸기
+        return "calendar";   // calendar 로 바꾸기
     }
 
     
@@ -101,6 +101,6 @@ public class FestivalsController {
         model.addAttribute("keyword", keyword);
 
         // 검색 결과도 목록 화면 재사용
-        return "list2024";
+        return "list";
     }
 }
