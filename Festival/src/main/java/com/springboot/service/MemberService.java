@@ -79,4 +79,11 @@ public class MemberService {
         member.setName(newName);
         memberRepository.save(member);
     }
+    
+    // 회원 삭제 (탈퇴)
+    @Transactional
+    public void delete(Member member) {
+    	System.out.println(">>> delete() 호출: id=" + member.getId() + ", email=" + member.getEmail());
+    	memberRepository.delete(member);
+    }
 }

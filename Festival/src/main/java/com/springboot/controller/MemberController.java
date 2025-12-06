@@ -4,7 +4,14 @@ import com.springboot.domain.Member;
 import com.springboot.dto.ChangePasswordForm;
 import com.springboot.dto.EditProfileForm;
 import com.springboot.service.MemberService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -133,5 +140,28 @@ public class MemberController {
         return "redirect:/members/me?profileUpdated";
     }
 
-    
+    // 회원 탈퇴 처리
+    @PostMapping("/delete")
+    public String deleteMember(Principal principal,
+                               HttpServletRequest request,
+                               HttpServletResponse response) {
+
+        if (principal == null) {
+            return "redirect:/auth/login";
+        }
+
+        Member member = memberService.getCurrentMember(principal);
+
+        // 1) DB에서 회원 삭제
+        memberService.delete(member);
+
+        // 2) 시큐리티 세션/쿠키 로그아웃 처리
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
+
+        // 3) 메인 페이지로 리다이렉트 + 쿼리 파라미터로 표시
+        return "redirect:/festivals";
+    }
 }

@@ -84,7 +84,7 @@ public class FestivalsController {
         patternService.predictNextYearByName(festival.getFcltyNm())
                 .ifPresent(expected -> model.addAttribute("expectedPeriod", expected));
 
-        return "detail";   // templates/detail.html
+        return "detail";   // detail.html
     }
     
     // 검색

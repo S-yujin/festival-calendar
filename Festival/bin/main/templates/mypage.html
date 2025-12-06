@@ -46,6 +46,18 @@
 			 <div th:if="${param.passwordChanged}">
 			     <p style="color: green;">비밀번호가 성공적으로 변경되었습니다.</p>
 			 </div>
+			 
+			 <form th:action="@{/members/delete}" method="post"
+			       onsubmit="return confirm('정말 회원 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.');">
+			     <!-- CSRF 사용 중이면 이거 필요 -->
+				 <input type="hidden"
+				            th:if="${_csrf != null}"
+				            th:name="${_csrf.parameterName}"
+				            th:value="${_csrf.token}" />
+			     <button type="submit" class="btn btn-danger">
+			         회원 탈퇴
+			     </button>
+			 </form>
 	</main>
 
 </body>

@@ -40,7 +40,7 @@ public class SecurityConfig {
 
         http
         		// URL 접근권한
-                .csrf(csrf -> csrf.disable()) // 처음엔 편하게 비활성화 (나중에 필요하면 다시 켜도 됨)
+                // .csrf(csrf -> csrf.disable()) // 처음엔 편하게 비활성화 (나중에 필요하면 다시 켜도 됨)
                 .userDetailsService(memberDetailsService)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/signup", "/css/**", "/js/**").permitAll()
