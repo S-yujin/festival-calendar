@@ -1251,3 +1251,5 @@ FROM festival
 WHERE origin_nm = '문체부_지역축제계획_2025';
 
 select count(*) from festival;
+
+select * from member;

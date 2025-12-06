@@ -6,43 +6,47 @@
 </head>
 <body>
 
-<!-- 공통 헤더 -->
-<div th:replace="~{fragments/header :: siteHeader}"></div>
+	<!-- 공통 헤더 -->
+	<div th:replace="~{fragments/header :: siteHeader}"></div>
+	<div class="container mt-4">
 
-<main class="container">
-    <h1>마이페이지</h1>
+	    <div th:if="${param.passwordChanged}" class="alert alert-success">
+	        비밀번호가 성공적으로 변경되었습니다.
+	    </div>
 
-    <section>
-        <p>
-            <strong>이름:</strong>
-            <span th:text="${member.name}">홍길동</span>
-        </p>
-        <p>
-            <strong>이메일:</strong>
-            <span th:text="${member.email}">test@example.com</span>
-        </p>
-        <p>
-            <strong>가입일:</strong>
-            <span th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm')}">
-                2025-12-01
-            </span>
-        </p>
-    </section>
-
-    <!-- 나중에 여기 아래에
-         - 비밀번호 변경 O
-         - 내가 찜한 축제
-         - 내가 쓴 리뷰
-         이런 것들 붙이면 됨 -->
-		 <p>
-			<a th:href="@{/members/edit}">프로필 수정</a>
-			<a th:href="@{/members/password}">비밀번호 변경</a>
-		 </p>
-		 
-		 <div th:if="${param.passwordChanged}">
-		     <p style="color: green;">비밀번호가 성공적으로 변경되었습니다.</p>
-		 </div>
-</main>
+	<main class="container">
+	    <h1>마이페이지</h1>
+	
+	    <section>
+	        <p>
+	            <strong>이름:</strong>
+	            <span th:text="${member.name}">홍길동</span>
+	        </p>
+	        <p>
+	            <strong>이메일:</strong>
+	            <span th:text="${member.email}">test@example.com</span>
+	        </p>
+	        <p>
+	            <strong>가입일:</strong>
+	            <span th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm')}">
+	                2025-12-01
+	            </span>
+	        </p>
+	    </section>
+	
+	    <!-- 나중에 여기 아래에
+	         - 내가 찜한 축제
+	         - 내가 쓴 리뷰
+	         이런 것들 붙이면 됨 -->
+			 <p>
+				<a th:href="@{/members/edit}">프로필 수정</a>
+				<a th:href="@{/members/password}">비밀번호 변경</a>
+			 </p>
+			 
+			 <div th:if="${param.passwordChanged}">
+			     <p style="color: green;">비밀번호가 성공적으로 변경되었습니다.</p>
+			 </div>
+	</main>
 
 </body>
 </html>
