@@ -2,39 +2,166 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>축제 목록</title>
+    <title>축제 목록 - 부울경 축제 한눈에 보기</title>
+    <!-- 나중에 CSS 파일 만들면 여기서만 링크 추가하면 됨 -->
+    <!-- <link rel="stylesheet" th:href="@{/css/style.css}"> -->
 </head>
 <body>
-	
-	<div th:replace="fragments/header :: siteHeader"></div>
-	<h1 th:text="${year} + '년 축제 목록'">2024년 축제 목록</h1>
 
-	<form th:action="@{/festivals/search}" method="get">
-    	<input type="text" name="q" placeholder="축제명 / 내용 검색"
-				th:value="${keyword}">
-    	<button type="submit">검색</button>
-	</form>
+<!-- 공통 헤더 -->
+<div th:replace="~{fragments/header :: header}"></div>
 
-	<a th:href="@{/festivals/calendar(year=${year}, month=${month})}">캘린더보기</a>
+<div class="page-container">
 
-	<table border="1">
-	    <tr>
-	        <th>이름</th>
-	        <th>지역</th>
-	        <th>기간</th>
-	        <th>장소</th>
-	    </tr>
-	    <tr th:each="f : ${festivals}">
-			<td>
-				<a th:href="@{/festivals/{id}(id=${f.id})}"
-				   th:text="${f.fcltyNm}">축제명</a>
-			</td>
-	        <td th:text="${f.ctprvnNm} + ' ' + ${f.signguNm}">지역</td>
-	        <td th:text="${f.fstvlBeginDe} + ' ~ ' + ${f.fstvlEndDe}">기간</td>
-	        <td th:text="${f.adstrdNm}">장소</td>
-	    </tr>
-	</table>
-	
-	<div th:replace="~{fragments/footer :: siteFooter}"></div>
+    <!-- 서비스 소개 / 사용 방법 -->
+    <section>
+        <h1 th:text="|${year}년 전국 축제 한눈에 보기|">
+            2025년 전국 축제 한눈에 보기
+        </h1>
+
+        <p>
+            지역·날짜·유형·혼잡도 조건을 선택해서 원하는 축제를 빠르게 찾아보세요.<br>
+            축제 이름을 클릭하면 상세 정보 페이지로 이동합니다.
+        </p>
+
+        <ul>
+            <li>① 상단 검색 조건을 선택하고 <strong>검색하기</strong> 버튼을 눌러주세요.</li>
+            <li>② 리스트에서 관심 있는 축제명을 클릭하면 상세 정보로 이동합니다.</li>
+            <li>③ 아래 대한민국 지도에서 대략적인 축제 위치를 함께 확인할 수 있습니다. (시·도 기준)</li>
+        </ul>
+    </section>
+
+    <!-- 검색 폼 (지금은 컨트롤러에서 아직 안 쓰고 있어도 괜찮음, 나중에 로직만 붙이면 됨) -->
+    <section>
+        <h2>축제 검색</h2>
+
+        <form th:action="@{/festivals/list}" method="get">
+            <div>
+                <label for="region">지역</label>
+                <select id="region" name="region">
+                    <option value="">전체</option>
+                    <!-- regions, selectedRegion은 아직 안 넘겨줘도 null이면 그냥 비어 있음 -->
+                    <option th:each="r : ${regions}"
+                            th:value="${r}"
+                            th:text="${r}"
+                            th:selected="${r} == ${selectedRegion}">
+                    </option>
+                </select>
+            </div>
+
+            <div>
+                <label for="startDate">기간</label>
+                <input type="date" id="startDate" name="startDate"
+                       th:value="${startDate}">
+                ~
+                <input type="date" id="endDate" name="endDate"
+                       th:value="${endDate}">
+            </div>
+
+            <div>
+                <label for="type">축제 유형</label>
+                <select id="type" name="type">
+                    <option value="">전체</option>
+                    <option value="음악" th:selected="${selectedType}=='음악'">음악/공연</option>
+                    <option value="먹거리" th:selected="${selectedType}=='먹거리'">먹거리/야시장</option>
+                    <option value="문화" th:selected="${selectedType}=='문화'">문화/전통</option>
+                    <option value="꽃" th:selected="${selectedType}=='꽃'">꽃/자연</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="congestion">혼잡도</label>
+                <select id="congestion" name="congestion">
+                    <option value="">전체</option>
+                    <option value="여유" th:selected="${selectedCongestion}=='여유'">여유</option>
+                    <option value="보통" th:selected="${selectedCongestion}=='보통'">보통</option>
+                    <option value="혼잡" th:selected="${selectedCongestion}=='혼잡'">혼잡 예상</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="keyword">키워드</label>
+                <input type="text" id="keyword" name="q"
+                       th:value="${keyword}">
+            </div>
+
+            <div>
+                <button type="submit">검색하기</button>
+                <a th:href="@{/festivals/list}">검색 조건 초기화</a>
+            </div>
+        </form>
+    </section>
+
+    <!-- 축제 리스트 -->
+    <section>
+        <h2>축제 목록</h2>
+
+        <p th:if="${#lists.isEmpty(festivals)}">
+            조건에 맞는 축제가 없습니다.
+        </p>
+
+        <table th:if="${!#lists.isEmpty(festivals)}" border="1" cellspacing="0" cellpadding="4">
+            <thead>
+            <tr>
+                <th>축제명</th>
+                <th>기간</th>
+				<th>지역</th>
+				<th>주소</th>
+                <th>상세</th>
+            </tr>
+            </thead>
+			
+			<tbody>
+			    <tr th:each="f : ${festivals}">
+			        <!-- 축제명 -->
+			        <td>
+			            <a th:href="@{/festivals/{id}(id=${f.id})}"
+			               th:text="${f.fcltyNm}">
+			                축제명
+			            </a>
+			        </td>
+
+			        <!-- 기간: MM.dd ~ MM.dd 형식 -->
+			        <td th:text="${#temporals.format(f.fstvlBeginDe, 'MM.dd')} + ' ~ ' +
+			                     ${#temporals.format(f.fstvlEndDe,   'MM.dd')}">
+			            00.00 ~ 00.00
+			        </td>
+
+			        <!-- 지역: 시/도 + 시군구 -->
+			        <td th:text="${f.ctprvnNm + ' ' + f.signguNm}">
+			            지역
+			        </td>
+
+			        <!-- 주소(읍면동 정도만) -->
+			        <td th:text="${f.adstrdNm}">
+			            주소
+			        </td>
+
+			        <!-- 상세보기 버튼 -->
+			        <td>
+			            <a th:href="@{/festivals/{id}(id=${f.id})}">상세보기</a>
+			        </td>
+			    </tr>
+
+			    <!-- 결과가 없을 때 -->
+			    <tr th:if="${#lists.isEmpty(festivals)}">
+			        <td colspan="5">검색 결과가 없습니다.</td>
+			    </tr>
+			    </tbody>
+        </table>
+    </section>
+
+    <!-- 대한민국 지도 영역 (지금은 설명만 / 나중에 Kakao 지도 등 연동) -->
+    <section>
+        <h2>대한민국 지도에서 축제 위치 보기</h2>
+        <p>시·도 기준으로 축제의 대략적인 위치를 지도에 표시할 예정입니다. (지도 API는 추후 연동)</p>
+        <div>
+            <!-- 나중에 지도 스크립트 들어갈 자리 -->
+            [지도 Placeholder]
+        </div>
+    </section>
+
+</div>
+
 </body>
 </html>

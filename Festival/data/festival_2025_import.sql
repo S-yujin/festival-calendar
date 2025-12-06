@@ -221,7 +221,7 @@ INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,lega
 INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-0215','자연생태','','제7회 양주 천만송이 천일홍 축제','경기','양주시','양주 나리농원','','',NULL,NULL,'2025-09-26','2025-09-28','','','',NULL,'문체부_지역축제계획_2025');
 INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-0216','전통역사','','양주국가유산 야행','경기','양주시','양주관아지','','',NULL,NULL,'2025-09-19','2025-09-21','','','',NULL,'문체부_지역축제계획_2025');
 INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-0217','주민화합','','제12회 야맥축제','경기','오산시','오색시장','','',NULL,NULL,'2025-05-30','2025-06-01','','','',NULL,'문체부_지역축제계획_2025');
-INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-0218','주민화합','','오(oh)! 해피 산타 마켓','경기','오산시','오산역광장, 아름다로 및 원동상저막 일대','','',NULL,NULL,'2025-12-06','2025-12-25','','','',NULL,'문체부_지역축제계획_2025');
+INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-0218','주민화합','','오(oh)! 해피 산타 마켓','경기','오산시','오산역광장, 아름다로 및 원동상저막 일대','','',NULL,NULL,'2025-11-22','2025-12-31','','','',NULL,'문체부_지역축제계획_2025');
 INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-0219','문화예술','','제39회 이천도자기축제','경기','이천시','이천도자예술마을(예스파크)','','',NULL,NULL,'2025-04-25','2025-05-06','','','',NULL,'문체부_지역축제계획_2025');
 INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-0220','지역특산물','','제24회 이천쌀문화축제','경기','이천시','이천시 농업테마공원','','',NULL,NULL,'2025-10-22','2025-10-26','','','',NULL,'문체부_지역축제계획_2025');
 INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-0221','문화예술','','제11회 이천체험문화축제','경기','이천시','이천도자예술마을(예스파크)','','',NULL,NULL,'2025-04-05','2025-04-06','','','',NULL,'문체부_지역축제계획_2025');
@@ -1241,15 +1241,3 @@ INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,lega
 INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-1212','문화예술','','제27회 부천 도당산 벚꽃축제','경기','부천시','도당동 산 65-8 일원','','',NULL,NULL,'2025-04-12','2025-04-13','','','',NULL,'문체부_지역축제계획_2025');
 INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-1213','문화예술','','제40회 복사골예술제','경기','부천시','부천시청 잔디광장 등','','',NULL,NULL,'2025-05-02','2025-05-05','','','',NULL,'문체부_지역축제계획_2025');
 INSERT INTO festival (raw_id,lclas_nm,mlsfc_nm,fclty_nm,ctprvn_nm,signgu_nm,legaldong_nm,adstrd_nm,zip_no,fclty_lo,fclty_la,fstvl_begin_de,fstvl_end_de,fstvl_cn,tel_no,hmpg_addr,data_base_de,origin_nm) VALUES ('MCST2025-1214','문화예술','','소사복숭아축제','경기','부천시','부천여자중학교 운동장','','',NULL,NULL,'2025-08-29','2025-08-30','','','',NULL,'문체부_지역축제계획_2025');
-
-SELECT DISTINCT origin_nm 
-FROM festival 
-WHERE origin_nm LIKE '문체부%';
-
-SELECT COUNT(*) 
-FROM festival 
-WHERE origin_nm = '문체부_지역축제계획_2025';
-
-select count(*) from festival;
-
-select * from member;
