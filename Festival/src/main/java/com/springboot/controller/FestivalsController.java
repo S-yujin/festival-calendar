@@ -30,9 +30,22 @@ public class FestivalsController {
         this.repository = repository;
         this.patternService = patternService;
     }
+    
+    // 메인 페이지
+    @GetMapping
+    public String festivalsHome(Model model) {
+    	int year = LocalDate.now().getYear();
+    	
+    	 // 필요하면 올해 축제 몇 개만 썸네일로 보여주기
+        List<Festivals> list = repository.findByYear(year);
+        model.addAttribute("year", year);
+        model.addAttribute("sampleFestivals", list.stream().limit(5).toList());
+
+        return "festivals-home";   // festivals-home.html
+    }
 
     // 올해(현재 연도) 전체 목록
-    @GetMapping
+    @GetMapping("/list")
     public String listCurrentYear(Model model) {
 
         int year = LocalDate.now().getYear();        // 지금 연도 (예: 2025)

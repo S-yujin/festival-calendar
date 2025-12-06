@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>부울경 축제 메인</title>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="container" style="max-width: 960px; margin: 2rem auto;">
+    <h1>부울경 축제 한눈에 보기</h1>
+    <p th:text="|${year}년 전국 축제를 한 번에 살펴보세요.|"></p>
+
+    <div style="margin-top: 1.5rem;">
+        <a th:href="@{/festivals/list}" class="btn btn-primary">올해 축제 목록 보기</a>
+        <a th:href="@{/festivals/calendar}" class="btn btn-secondary" style="margin-left: 0.5rem;">
+            달력으로 보기
+        </a>
+    </div>
+
+    <section style="margin-top: 2rem;">
+        <h2>올해 축제 미리보기</h2>
+        <ul>
+            <li th:each="f : ${sampleFestivals}">
+                <a th:href="@{|/festivals/${f.id}|}"
+                   th:text="${f.fcltyNm}">축제 이름</a>
+                <span th:text="${f.fstvlBeginDe}">날짜</span>
+            </li>
+        </ul>
+    </section>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>
