@@ -2,9 +2,9 @@ package com.springboot.controller;
 
 import com.springboot.domain.Member;
 import com.springboot.dto.ChangePasswordForm;
-import com.springboot.repository.MemberRepository;
+import com.springboot.dto.EditProfileForm;
+import com.springboot.service.MemberService;
 import jakarta.validation.Valid;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -19,27 +19,22 @@ import java.security.Principal;
 @RequestMapping("/members")
 public class MemberController {
 
-    private final MemberRepository memberRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final MemberService memberService;
 
-    public MemberController(MemberRepository memberRepository,
-                            PasswordEncoder passwordEncoder) {
-        this.memberRepository = memberRepository;
-        this.passwordEncoder = passwordEncoder;
+    public MemberController(MemberService memberService) {
+        this.memberService = memberService;
     }
 
-    // 이미 있던 마이페이지
+    // 마이페이지
     @GetMapping("/me")
     public String myPage(Principal principal, Model model) {
         if (principal == null) {
             return "redirect:/auth/login";
         }
 
-        String email = principal.getName();
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("회원 정보를 찾을 수 없습니다."));
-
+        Member member = memberService.getCurrentMember(principal);
         model.addAttribute("member", member);
+
         return "mypage";
     }
 
@@ -61,9 +56,7 @@ public class MemberController {
             return "redirect:/auth/login";
         }
 
-        String email = principal.getName();
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("회원 정보를 찾을 수 없습니다."));
+        Member member = memberService.getCurrentMember(principal);
 
         // 1) 기본 검증 에러
         if (bindingResult.hasErrors()) {
@@ -71,7 +64,7 @@ public class MemberController {
         }
 
         // 2) 현재 비밀번호 일치 확인
-        if (!passwordEncoder.matches(form.getCurrentPassword(), member.getPassword())) {
+        if (!memberService.checkPassword(form.getCurrentPassword(), member)) {
             bindingResult.rejectValue(
                     "currentPassword",
                     "password.current.invalid",
@@ -90,12 +83,55 @@ public class MemberController {
             return "change-password";
         }
 
-        // 4) 비밀번호 실제 변경
-        String encoded = passwordEncoder.encode(form.getNewPassword());
-        member.setPassword(encoded);
-        memberRepository.save(member);
+        // 4) 비밀번호 실제 변경 (서비스에서 암호화 포함)
+        memberService.changePassword(member, form.getNewPassword());
 
         // 성공 후 마이페이지로
         return "redirect:/members/me?passwordChanged";
     }
+    
+ // 프로필 수정 폼
+    @GetMapping("/edit")
+    public String editProfileForm(Principal principal, Model model) {
+        if (principal == null) {
+            return "redirect:/auth/login";
+        }
+
+        String email = principal.getName();
+        Member member = memberService.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("회원 정보를 찾을 수 없습니다."));
+
+        EditProfileForm form = new EditProfileForm();
+        form.setName(member.getName());
+        form.setEmail(member.getEmail());
+
+        model.addAttribute("form", form);
+        return "edit-profile";
+    }
+    
+    // 프로필 수정 처리
+    @PostMapping("/edit")
+    public String editProfileSubmit(@Valid @ModelAttribute("form") EditProfileForm form,
+                                    BindingResult bindingResult,
+                                    Principal principal,
+                                    Model model) {
+
+        if (principal == null) {
+            return "redirect:/auth/login";
+        }
+
+        Member member = memberService.getCurrentMember(principal);
+
+        if (bindingResult.hasErrors()) {
+            return "edit-profile";
+        }
+
+        // 이름 변경
+        memberService.updateName(member, form.getName());
+
+        // 수정 후 마이페이지로 리다이렉트
+        return "redirect:/members/me?profileUpdated";
+    }
+
+    
 }

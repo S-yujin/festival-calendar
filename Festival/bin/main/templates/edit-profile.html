@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmls:th="hhtp//www.thymeleaf.org">
+<head>
+	<title>프로필 수정</title>
+	<meta charset="UTF-8">
+</head>
+<body>
+	<div th:replace="~{fragments/header :: header}"></div>
+	
+	<h2>프로필 수정</h2>
+	
+	<form th:action="@{/members/edit}" th:object="${form}" method="post">
+	    <div>
+	        <label for="name">이름</label>
+	        <input id="name" type="text" th:field="*{name}" />
+	    </div>
+
+	    <div>
+	        <label for="email">이메일</label>
+	        <input id="email" type="email" th:field="*{email}" readonly />
+	    </div>
+
+	    <button type="submit">저장</button>
+	</form>
+	
+</body>
+</html>

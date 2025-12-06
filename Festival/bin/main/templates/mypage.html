@@ -35,9 +35,10 @@
          - 내가 쓴 리뷰
          이런 것들 붙이면 됨 -->
 		 <p>
-		     <a th:href="@{/members/password}">비밀번호 변경</a>
+			<a th:href="@{/members/edit}">프로필 수정</a>
+			<a th:href="@{/members/password}">비밀번호 변경</a>
 		 </p>
-
+		 
 		 <div th:if="${param.passwordChanged}">
 		     <p style="color: green;">비밀번호가 성공적으로 변경되었습니다.</p>
 		 </div>

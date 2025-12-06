@@ -5,52 +5,53 @@
     <title th:text="${festival.fcltyNm}">축제 상세</title>
 </head>
 <body>
-<h1 th:text="${festival.fcltyNm}">축제 이름</h1>
+	<div th:replace="fragments/header :: header"></div>
+	<h1 th:text="${festival.fcltyNm}">축제 이름</h1>
 
-<ul>
-    <li>분류: <span th:text="${festival.lclasNm}"></span> /
-              <span th:text="${festival.mlsfcNm}"></span></li>
-    <li>기간:
-        <span th:text="${festival.fstvlBeginDe}"></span>
-        ~
-        <span th:text="${festival.fstvlEndDe}"></span>
-    </li>
-    <li>지역:
-        <span th:text="${festival.ctprvnNm}"></span>
-        <span th:text="${festival.signguNm}"></span>
-    </li>
-    <li>주소(법정동): <span th:text="${festival.legaldongNm}"></span></li>
-    <li>상세 주소(행정동): <span th:text="${festival.adstrdNm}"></span></li>
-    <li>위치: 위도 <span th:text="${festival.fcltyLa}"></span>,
-             경도 <span th:text="${festival.fcltyLo}"></span></li>
-    <li>전화번호: <span th:text="${festival.telNo}"></span></li>
-    <li>홈페이지:
-        <a th:if="${festival.hmpgAddr != null}"
-           th:href="${festival.hmpgAddr}"
-           target="_blank"
-           th:text="${festival.hmpgAddr}">홈페이지</a>
-    </li>
-</ul>
-
-<h3>축제 소개</h3>
-<p th:text="${festival.fstvlCn}">내용</p>
-
-<!-- ================== 예상 개최 시기 블럭 ================== -->
-<div th:if="${expectedPeriod != null}">
-    <h3>예상 개최 시기 ([[${expectedPeriod.targetYear}]]년)</h3>
-    <p>
-        이 축제는 보통
-		<strong th:text="${expectedPeriod.month}">10</strong>월
-		<strong th:text="${expectedPeriod.weekOfMonth}">4</strong>주차
-		<strong th:text="${expectedPeriod.dayOfWeekKo}">토</strong>요일
-		(<span th:text="${expectedPeriod.sampleCount}">0</span>년치 데이터 기준)
-    </p>
-</div>
-<!-- ======================================================= -->
-
-<p>
-    <a th:href="@{/festivals}">전체 목록으로</a>
-    <a th:href="@{/festivals/calendar(year=${year}, month=${month})}">캘린더로</a>
-</p>
+	<ul>
+	    <li>분류: <span th:text="${festival.lclasNm}"></span> /
+	              <span th:text="${festival.mlsfcNm}"></span></li>
+	    <li>기간:
+	        <span th:text="${festival.fstvlBeginDe}"></span>
+	        ~
+	        <span th:text="${festival.fstvlEndDe}"></span>
+	    </li>
+	    <li>지역:
+	        <span th:text="${festival.ctprvnNm}"></span>
+	        <span th:text="${festival.signguNm}"></span>
+	    </li>
+	    <li>주소(법정동): <span th:text="${festival.legaldongNm}"></span></li>
+	    <li>상세 주소(행정동): <span th:text="${festival.adstrdNm}"></span></li>
+	    <li>위치: 위도 <span th:text="${festival.fcltyLa}"></span>,
+	             경도 <span th:text="${festival.fcltyLo}"></span></li>
+	    <li>전화번호: <span th:text="${festival.telNo}"></span></li>
+	    <li>홈페이지:
+	        <a th:if="${festival.hmpgAddr != null}"
+	           th:href="${festival.hmpgAddr}"
+	           target="_blank"
+	           th:text="${festival.hmpgAddr}">홈페이지</a>
+	    </li>
+	</ul>
+	
+	<h3>축제 소개</h3>
+	<p th:text="${festival.fstvlCn}">내용</p>
+	
+	<!-- ================== 예상 개최 시기 블럭 ================== -->
+	<div th:if="${expectedPeriod != null}">
+	    <h3>예상 개최 시기 ([[${expectedPeriod.targetYear}]]년)</h3>
+	    <p>
+	        이 축제는 보통
+			<strong th:text="${expectedPeriod.month}">10</strong>월
+			<strong th:text="${expectedPeriod.weekOfMonth}">4</strong>주차
+			<strong th:text="${expectedPeriod.dayOfWeekKo}">토</strong>요일
+			(<span th:text="${expectedPeriod.sampleCount}">0</span>년치 데이터 기준)
+	    </p>
+	</div>
+	<!-- ======================================================= -->
+	
+	<p>
+	    <a th:href="@{/festivals}">전체 목록으로</a>
+	    <a th:href="@{/festivals/calendar(year=${year}, month=${month})}">캘린더로</a>
+	</p>
 </body>
 </html>
