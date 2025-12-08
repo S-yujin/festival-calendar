@@ -4,6 +4,7 @@ import com.springboot.domain.Festivals;
 import com.springboot.repository.FestivalsRepository;
 import com.springboot.service.FestivalPatternService;
 import com.springboot.dto.FestivalMarker;
+import com.springboot.domain.FestivalStatus;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.Comparator;
 
 @Controller
 @RequestMapping("/festivals")   // 공통 prefix
@@ -53,7 +55,7 @@ public class FestivalsController {
         return "festivals-home";   // festivals-home.html
     }
 
-    // 리스트 기반 검색 화면
+ // 리스트 기반 검색 화면
     @GetMapping("/list")
     public String listCurrentYear(
             @RequestParam(name = "region",     required = false) String region,
@@ -65,16 +67,17 @@ public class FestivalsController {
             @RequestParam(name = "congestion", required = false) String congestion,
             Model model) {
 
-        int year = LocalDate.now().getYear();
-        List<Festivals> all = repository.findByYear(year);
+        LocalDate today = LocalDate.now();
+        int year = today.getYear();
 
+        // 1) 해당 연도 전체 축제
+        List<Festivals> all = repository.findByYear(year);
         Stream<Festivals> stream = all.stream();
 
-        // 날짜 필터
+        // 2) 날짜 필터
         if (startDate != null) {
             stream = stream.filter(f -> {
                 LocalDate end = f.getFstvlEndDe();
-                // 끝나는 날짜가 없으면 검색 결과에서 제외
                 if (end == null) return false;
                 return !end.isBefore(startDate);   // end >= startDate
             });
@@ -88,33 +91,49 @@ public class FestivalsController {
             });
         }
 
-        // 지역 / 유형 / 혼잡도 필터
+        // 3) 지역 / 유형 / 혼잡도 필터 (지금은 간단히 내용/이름에 포함 여부로 체크)
         stream = applyContainsFilter(stream, region);
         stream = applyContainsFilter(stream, category);
         stream = applyContainsFilter(stream, congestion);
 
         List<Festivals> list = stream.collect(Collectors.toList());
 
+        // 4) 진행 중 → 예정 → 지난 순으로 정렬
+        list.sort(
+            Comparator.comparing((Festivals f) -> {
+                FestivalStatus status = calculateStatus(f, today);
+                return switch (status) {
+                    case ONGOING  -> 0;
+                    case UPCOMING -> 1;
+                    case PAST     -> 2;
+                };
+            }).thenComparing(Festivals::getFstvlBeginDe, Comparator.nullsLast(Comparator.naturalOrder()))
+        );
+
+        // 5) 지역 선택 옵션 (임시)
         List<String> regions = List.of("서울", "부산", "울산", "경남", "기타");
 
-        model.addAttribute("festivals", list);
-        model.addAttribute("year", year);
-        
-        // 지도용 마커 데이터
+        // 6) 지도용 마커 데이터 (status 포함)
         List<FestivalMarker> markers = list.stream()
                 .filter(f -> f.getFcltyLa() != null && f.getFcltyLo() != null)
-                .map(f -> new FestivalMarker(
-                        f.getId(),
-                        f.getFcltyNm(),
-                        f.getFcltyLa(),   // 위도
-                        f.getFcltyLo()    // 경도
-                ))
+                .map(f -> {
+                    FestivalStatus status = calculateStatus(f, today);
+                    return new FestivalMarker(
+                            f.getId(),
+                            f.getFcltyNm(),
+                            f.getFcltyLa(),  // 위도
+                            f.getFcltyLo(),  // 경도
+                            status.name()    // "ONGOING" 같은 문자열
+                    );
+                })
                 .collect(Collectors.toList());
-        
+
+        // 7) 모델에 담기
+        model.addAttribute("today", today);
         model.addAttribute("festivals", list);
         model.addAttribute("year", year);
         model.addAttribute("markers", markers);
-        
+
         // 폼 값 유지
         model.addAttribute("region", region);
         model.addAttribute("startDate", startDate);
@@ -122,8 +141,8 @@ public class FestivalsController {
         model.addAttribute("category", category);
         model.addAttribute("congestion", congestion);
         model.addAttribute("regions", regions);
-        		
-        return "list";
+
+        return "list";  // list.html
     }
 
     // 내용에 검색어가 포함되는지 간단히 체크하는 헬퍼
@@ -137,6 +156,25 @@ public class FestivalsController {
                 (f.getFcltyNm() != null && f.getFcltyNm().contains(kw))
         );
     }
+        
+     // 오늘 기준 축제 상태 계산
+     private FestivalStatus calculateStatus(Festivals f, LocalDate today) {
+    	 LocalDate begin = f.getFstvlBeginDe();
+    	 LocalDate end   = f.getFstvlEndDe();
+    	 
+    	 if (begin == null || end == null) {
+    		 return FestivalStatus.PAST; // 날짜 없으면 일단 지난 축제로 처리
+    		 }
+    	 if (!today.isBefore(begin) && !today.isAfter(end)) {
+    		 return FestivalStatus.ONGOING;   // 오늘이 기간 안
+    		 } 
+    	 else if (today.isBefore(begin)) {
+    		 return FestivalStatus.UPCOMING;  // 아직 시작 전
+    		 } 
+    	 else {
+    		 return FestivalStatus.PAST;      // 이미 종료
+    		 }
+    	 }
 
     // 캘린더
     @GetMapping("/calendar")
