@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>축제 목록 - 부울경 축제 한눈에 보기</title>
+    <title>축제 목록 - 축제 한눈에 보기</title>
     <!-- 나중에 CSS 파일 만들면 여기서만 링크 추가하면 됨 -->
     <!-- <link rel="stylesheet" th:href="@{/css/style.css}"> -->
 </head>
@@ -91,6 +91,11 @@
             </div>
         </form>
     </section>
+	
+	<section>
+	    <h2>대한민국 지도에서 축제 위치 보기</h2>
+	    <div id="map" style="width:100%; height:400px;"></div>
+	</section>
 
     <!-- 축제 리스트 -->
     <section>
@@ -150,18 +155,48 @@
 			    </tbody>
         </table>
     </section>
-
-    <!-- 대한민국 지도 영역 (지금은 설명만 / 나중에 Kakao 지도 등 연동) -->
-    <section>
-        <h2>대한민국 지도에서 축제 위치 보기</h2>
-        <p>시·도 기준으로 축제의 대략적인 위치를 지도에 표시할 예정입니다. (지도 API는 추후 연동)</p>
-        <div>
-            <!-- 나중에 지도 스크립트 들어갈 자리 -->
-            [지도 Placeholder]
-        </div>
-    </section>
-
 </div>
+<!-- 카카오 지도 API (반드시 JavaScript 키) -->
+<script type="text/javascript"
+        src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=imrp8lidfv">
+</script>
 
+<script th:inline="javascript">
+/*<![CDATA[*/
+    var markers = /*[[${markers}]]*/ [];
+
+    var map = new naver.maps.Map('map', {
+        center: new naver.maps.LatLng(36.5, 127.5),
+        zoom: 7
+    });
+
+    if (markers.length > 0) {
+        var bounds = new naver.maps.LatLngBounds();
+
+        markers.forEach(function(m) {
+            var position = new naver.maps.LatLng(m.lat, m.lng);
+
+            var marker = new naver.maps.Marker({
+                position: position,
+                map: map
+            });
+
+            var info = new naver.maps.InfoWindow({
+                content: '<div style="padding:5px 10px;">' +
+                         '<a href="/festivals/' + m.id + '">' + m.name + '</a>' +
+                         '</div>'
+            });
+
+            naver.maps.Event.addListener(marker, 'click', function () {
+                info.open(map, marker);
+            });
+
+            bounds.extend(position);
+        });
+
+        map.fitBounds(bounds);
+    }
+/*]]>*/
+</script>
 </body>
 </html>

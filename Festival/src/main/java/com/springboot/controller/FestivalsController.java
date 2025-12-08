@@ -3,6 +3,7 @@ package com.springboot.controller;
 import com.springboot.domain.Festivals;
 import com.springboot.repository.FestivalsRepository;
 import com.springboot.service.FestivalPatternService;
+import com.springboot.dto.FestivalMarker;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -98,7 +99,22 @@ public class FestivalsController {
 
         model.addAttribute("festivals", list);
         model.addAttribute("year", year);
-
+        
+        // 지도용 마커 데이터
+        List<FestivalMarker> markers = list.stream()
+                .filter(f -> f.getFcltyLa() != null && f.getFcltyLo() != null)
+                .map(f -> new FestivalMarker(
+                        f.getId(),
+                        f.getFcltyNm(),
+                        f.getFcltyLa(),   // 위도
+                        f.getFcltyLo()    // 경도
+                ))
+                .collect(Collectors.toList());
+        
+        model.addAttribute("festivals", list);
+        model.addAttribute("year", year);
+        model.addAttribute("markers", markers);
+        
         // 폼 값 유지
         model.addAttribute("region", region);
         model.addAttribute("startDate", startDate);
@@ -106,7 +122,7 @@ public class FestivalsController {
         model.addAttribute("category", category);
         model.addAttribute("congestion", congestion);
         model.addAttribute("regions", regions);
-
+        		
         return "list";
     }
 
