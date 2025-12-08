@@ -119,26 +119,49 @@
             <p>등록된 후기가 아직 없습니다. 첫 후기를 남겨보세요!</p>
         </div>
 
-        <ul th:if="${!#lists.isEmpty(reviews)}">
-            <li th:each="review : ${reviews}">
-                <span th:text="${review.nickname}">닉네임</span>
+		<ul th:if="${!#lists.isEmpty(reviews)}">
+		    <li th:each="review : ${reviews}">
+		        <span th:text="${review.nickname}">닉네임</span>
 
-                <!-- 날짜 포맷: createdAt이 null이면 빈 문자열 -->
-                <span th:text="${review.createdAt != null ? #temporals.format(review.createdAt, 'yyyy-MM-dd') : ''}">
-                    날짜
-                </span>
+		        <!-- 날짜 포맷 -->
+		        <span th:text="${review.createdAt != null ? #temporals.format(review.createdAt, 'yyyy-MM-dd') : ''}">
+		            날짜
+		        </span>
 
-                <span th:text="${review.content}">내용</span>
-                <span th:text="${review.rating} + '점'">0점</span>
+		        <span th:text="${review.content}">내용</span>
+		        <span th:text="${review.rating} + '점'">0점</span>
 
-                <span th:if="${review.attachmentId != null}">
-                    <a th:href="@{/files/{id}(id=${review.attachmentId})}">
-                        첨부 이미지 다운로드
-                    </a>
-                </span>
-            </li>
-        </ul>
+		        <span th:if="${review.attachmentId != null}">
+		            <a th:href="@{/files/{id}(id=${review.attachmentId})}">
+		                첨부 이미지 다운로드
+		            </a>
+		        </span>
+
+		        <!-- 🔽 여기에 버튼 -->
+		        <button type="button"
+		                class="delete-review-btn"
+		                th:data-id="${review.id}">
+		            삭제
+		        </button>
+		    </li>
+		</ul>
     </section>
+	<script>
+	document.addEventListener("click", async (e) => {
+	    if (!e.target.matches(".delete-review-btn")) return;
+
+	    const id = e.target.dataset.id;
+	    if (!confirm("이 후기를 삭제할까요?")) return;
+
+	    const res = await fetch(`/api/reviews/${id}`, { method: "DELETE" });
+	    if (res.ok) {
+	        e.target.closest("li")?.remove();
+	    } else {
+	        const body = await res.json().catch(() => null);
+	        alert(body?.message || "삭제 중 오류가 발생했습니다.");
+	    }
+	});
+	</script>
 
     <p>
         <a th:href="@{/festivals}">전체 목록으로</a>
