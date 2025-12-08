@@ -5,53 +5,144 @@
     <title th:text="${festival.fcltyNm}">축제 상세</title>
 </head>
 <body>
-	<div th:replace="fragments/header :: header"></div>
-	<h1 th:text="${festival.fcltyNm}">축제 이름</h1>
+    <div th:replace="fragments/header :: header"></div>
 
-	<ul>
-	    <li>분류: <span th:text="${festival.lclasNm}"></span> /
-	              <span th:text="${festival.mlsfcNm}"></span></li>
-	    <li>기간:
-	        <span th:text="${festival.fstvlBeginDe}"></span>
-	        ~
-	        <span th:text="${festival.fstvlEndDe}"></span>
-	    </li>
-	    <li>지역:
-	        <span th:text="${festival.ctprvnNm}"></span>
-	        <span th:text="${festival.signguNm}"></span>
-	    </li>
-	    <li>주소(법정동): <span th:text="${festival.legaldongNm}"></span></li>
-	    <li>상세 주소(행정동): <span th:text="${festival.adstrdNm}"></span></li>
-	    <li>위치: 위도 <span th:text="${festival.fcltyLa}"></span>,
-	             경도 <span th:text="${festival.fcltyLo}"></span></li>
-	    <li>전화번호: <span th:text="${festival.telNo}"></span></li>
-	    <li>홈페이지:
-	        <a th:if="${festival.hmpgAddr != null}"
-	           th:href="${festival.hmpgAddr}"
-	           target="_blank"
-	           th:text="${festival.hmpgAddr}">홈페이지</a>
-	    </li>
-	</ul>
-	
-	<h3>축제 소개</h3>
-	<p th:text="${festival.fstvlCn}">내용</p>
-	
-	<!-- ================== 예상 개최 시기 블럭 ================== -->
-	<div th:if="${expectedPeriod != null}">
-	    <h3>예상 개최 시기 ([[${expectedPeriod.targetYear}]]년)</h3>
-	    <p>
-	        이 축제는 보통
-			<strong th:text="${expectedPeriod.month}">10</strong>월
-			<strong th:text="${expectedPeriod.weekOfMonth}">4</strong>주차
-			<strong th:text="${expectedPeriod.dayOfWeekKo}">토</strong>요일
-			(<span th:text="${expectedPeriod.sampleCount}">0</span>년치 데이터 기준)
-	    </p>
-	</div>
-	<!-- ======================================================= -->
-	
-	<p>
-	    <a th:href="@{/festivals}">전체 목록으로</a>
-	    <a th:href="@{/festivals/calendar(year=${year}, month=${month})}">캘린더로</a>
-	</p>
+    <h1 th:text="${festival.fcltyNm}">축제 이름</h1>
+
+    <ul>
+        <li>
+            분류:
+            <span th:text="${festival.lclasNm}"></span> /
+            <span th:text="${festival.mlsfcNm}"></span>
+        </li>
+        <li>
+            기간:
+            <span th:text="${festival.fstvlBeginDe}"></span>
+            ~
+            <span th:text="${festival.fstvlEndDe}"></span>
+        </li>
+        <li>
+            지역:
+            <span th:text="${festival.ctprvnNm}"></span>
+            <span th:text="${festival.signguNm}"></span>
+        </li>
+        <li>
+            주소(법정동):
+            <span th:text="${festival.legaldongNm}"></span>
+        </li>
+        <li>
+            상세 주소(행정동):
+            <span th:text="${festival.adstrdNm}"></span>
+        </li>
+        <li>
+            위치:
+            위도 <span th:text="${festival.fcltyLa}"></span>,
+            경도 <span th:text="${festival.fcltyLo}"></span>
+        </li>
+        <li>
+            전화번호:
+            <span th:text="${festival.telNo}"></span>
+        </li>
+        <li>
+            홈페이지:
+            <a th:if="${festival.hmpgAddr != null}"
+               th:href="${festival.hmpgAddr}"
+               target="_blank"
+               th:text="${festival.hmpgAddr}">홈페이지</a>
+        </li>
+    </ul>
+
+    <h3>축제 소개</h3>
+    <p th:text="${festival.fstvlCn}">내용</p>
+
+    <!-- ================== 예상 개최 시기 블럭 ================== -->
+    <div th:if="${expectedPeriod != null}">
+        <h3>예상 개최 시기 ([[${expectedPeriod.targetYear}]]년)</h3>
+        <p>
+            이 축제는 보통
+            <strong th:text="${expectedPeriod.month}">10</strong>월
+            <strong th:text="${expectedPeriod.weekOfMonth}">4</strong>주차
+            <strong th:text="${expectedPeriod.dayOfWeekKo}">토</strong>요일
+            (<span th:text="${expectedPeriod.sampleCount}">0</span>년치 데이터 기준)
+        </p>
+    </div>
+    <!-- ======================================================= -->
+
+    <hr>
+
+    <section id="reviews">
+        <h2>축제 후기</h2>
+
+        <!-- 로그인 안 했을 때 -->
+        <p th:if="${!loggedIn}">
+            후기를 작성하려면 <a th:href="@{/auth/login}">로그인</a> 해 주세요.
+        </p>
+
+        <!-- 로그인 했을 때: 후기 작성 폼 -->
+        <div th:if="${loggedIn}">
+            <form th:action="@{/festivals/{id}/reviews(id=${festival.id})}"
+                  method="post"
+                  enctype="multipart/form-data"
+                  th:object="${reviewForm}">
+                <div>
+                    <label>별점</label>
+                    <select th:field="*{rating}">
+                        <option value="1">★☆☆☆☆</option>
+                        <option value="2">★★☆☆☆</option>
+                        <option value="3">★★★☆☆</option>
+                        <option value="4">★★★★☆</option>
+                        <option value="5">★★★★★</option>
+                    </select>
+                    <span th:if="${#fields.hasErrors('rating')}"
+                          th:errors="*{rating}"></span>
+                </div>
+
+                <div>
+                    <label>후기 내용</label><br>
+                    <textarea th:field="*{content}" rows="3" cols="60"></textarea>
+                    <span th:if="${#fields.hasErrors('content')}"
+                          th:errors="*{content}"></span>
+                </div>
+
+                <!-- (옵션) 이미지 업로드 -->
+                <div>
+                    <label>사진 첨부 (선택)</label>
+                    <input type="file" name="imageFile">
+                </div>
+
+                <button type="submit">후기 등록</button>
+            </form>
+        </div>
+
+        <!-- 후기 리스트 -->
+        <div th:if="${#lists.isEmpty(reviews)}">
+            <p>등록된 후기가 아직 없습니다. 첫 후기를 남겨보세요!</p>
+        </div>
+
+        <ul th:if="${!#lists.isEmpty(reviews)}">
+            <li th:each="review : ${reviews}">
+                <span th:text="${review.nickname}">닉네임</span>
+
+                <!-- 날짜 포맷: createdAt이 null이면 빈 문자열 -->
+                <span th:text="${review.createdAt != null ? #temporals.format(review.createdAt, 'yyyy-MM-dd') : ''}">
+                    날짜
+                </span>
+
+                <span th:text="${review.content}">내용</span>
+                <span th:text="${review.rating} + '점'">0점</span>
+
+                <span th:if="${review.attachmentId != null}">
+                    <a th:href="@{/files/{id}(id=${review.attachmentId})}">
+                        첨부 이미지 다운로드
+                    </a>
+                </span>
+            </li>
+        </ul>
+    </section>
+
+    <p>
+        <a th:href="@{/festivals}">전체 목록으로</a>
+        <a th:href="@{/festivals/calendar(year=${year}, month=${month})}">캘린더로</a>
+    </p>
 </body>
 </html>

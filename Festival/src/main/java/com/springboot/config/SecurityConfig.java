@@ -43,7 +43,7 @@ public class SecurityConfig {
                 // .csrf(csrf -> csrf.disable()) // 처음엔 편하게 비활성화 (나중에 필요하면 다시 켜도 됨)
                 .userDetailsService(memberDetailsService)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/signup", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/login", "/signup", "/css/**", "/js/**", "/files/**").permitAll()
                         .requestMatchers("/members/**").authenticated()
                         .anyRequest().permitAll()
                 )       
