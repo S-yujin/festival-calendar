@@ -247,7 +247,18 @@ public class FestivalsController {
         model.addAttribute("reviewForm", new ReviewForm());
 
         // 로그인 여부
-        model.addAttribute("loggedIn", principal != null);
+        boolean loggedIn = (principal != null);
+        model.addAttribute("loggedIn", loggedIn);
+        
+        // 현재 로그인한 회원 id 템플릿으로 전달
+        if (loggedIn) {
+            Member member = memberService.findByEmail(principal.getName())
+                    .orElse(null);   // Optional<Member> 이니까
+
+            if (member != null) {
+                model.addAttribute("currentMemberId", member.getId());
+            }
+        }
 
         return "detail";   // detail.html
     }

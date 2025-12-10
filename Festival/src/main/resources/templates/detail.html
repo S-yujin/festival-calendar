@@ -66,103 +66,193 @@
             (<span th:text="${expectedPeriod.sampleCount}">0</span>년치 데이터 기준)
         </p>
     </div>
-    <!-- ======================================================= -->
 
-    <hr>
+	<!-- ================== 후기 섹션 시작 ================== -->
+	<section id="reviews" class="review-section">
+	    <h2>축제 후기</h2>
 
-    <section id="reviews">
-        <h2>축제 후기</h2>
+	    <!-- ✅ 후기 리스트: 없을 때 -->
+	    <div th:if="${#lists.isEmpty(reviews)}">
+	        <p>등록된 후기가 아직 없습니다. 첫 후기를 남겨보세요!</p>
+	    </div>
 
-        <!-- 로그인 안 했을 때 -->
-        <p th:if="${!loggedIn}">
-            후기를 작성하려면 <a th:href="@{/auth/login}">로그인</a> 해 주세요.
-        </p>
+	    <!-- ✅ 후기 리스트: 있을 때 -->
+	    <ul th:if="${!#lists.isEmpty(reviews)}" class="review-list">
+	        <li th:each="review : ${reviews}" class="review-item">
+	            <!-- 닉네임 -->
+	            <span class="review-nickname" th:text="${review.nickname}">닉네임</span>
 
-        <!-- 로그인 했을 때: 후기 작성 폼 -->
-        <div th:if="${loggedIn}">
-            <form th:action="@{/festivals/{id}/reviews(id=${festival.id})}"
-                  method="post"
-                  enctype="multipart/form-data"
-                  th:object="${reviewForm}">
-                <div>
-                    <label>별점</label>
-                    <select th:field="*{rating}">
-                        <option value="1">★☆☆☆☆</option>
-                        <option value="2">★★☆☆☆</option>
-                        <option value="3">★★★☆☆</option>
-                        <option value="4">★★★★☆</option>
-                        <option value="5">★★★★★</option>
-                    </select>
-                    <span th:if="${#fields.hasErrors('rating')}"
-                          th:errors="*{rating}"></span>
-                </div>
+	            <!-- 작성일 -->
+	            <span class="review-date"
+	                  th:text="${review.createdAt != null ? #temporals.format(review.createdAt, 'yyyy-MM-dd') : ''}">
+	                날짜
+	            </span>
 
-                <div>
-                    <label>후기 내용</label><br>
-                    <textarea th:field="*{content}" rows="3" cols="60"></textarea>
-                    <span th:if="${#fields.hasErrors('content')}"
-                          th:errors="*{content}"></span>
-                </div>
+	            <!-- 내용 -->
+	            <p class="review-content" th:text="${review.content}">내용</p>
 
-                <!-- (옵션) 이미지 업로드 -->
-                <div>
-                    <label>사진 첨부 (선택)</label>
-                    <input type="file" name="imageFile">
-                </div>
+	            <!-- 별점 -->
+	            <span class="review-rating" th:text="${review.rating} + '점'">0점</span>
 
-                <button type="submit">후기 등록</button>
-            </form>
-        </div>
+	            <!-- 첨부 이미지 다운로드 링크 -->
+	            <span th:if="${review.attachmentId != null}">
+	                <a th:href="@{/files/{id}(id=${review.attachmentId})}">
+	                    첨부 이미지 다운로드
+	                </a>
+	            </span>
 
-        <!-- 후기 리스트 -->
-        <div th:if="${#lists.isEmpty(reviews)}">
-            <p>등록된 후기가 아직 없습니다. 첫 후기를 남겨보세요!</p>
-        </div>
+				<!-- ✅ 현재 로그인한 회원이 쓴 리뷰일 때만 수정/삭제 버튼 노출 -->
+				<div th:if="${currentMemberId != null
+							and review.member != null
+				            and review.member.id == currentMemberId}">
+						<button type="button"
+				                class="edit-review-btn"
+				                th:data-id="${review.id}"
+				                th:data-content="${review.content}"
+				                th:data-rating="${review.rating}">
+				                수정
+							</button>
+				        <button type="button"
+				                class="delete-review-btn"
+				                th:data-id="${review.id}">
+				                삭제
+				            </button>
+						</div>
+					</li>
+				</ul>
 
-		<ul th:if="${!#lists.isEmpty(reviews)}">
-		    <li th:each="review : ${reviews}">
-		        <span th:text="${review.nickname}">닉네임</span>
+	    <hr/>
+	    <!-- 후기 작성 폼 -->
+	    <div th:if="${loggedIn}">
+	        <h3>후기 작성하기</h3>
+	        <form th:action="@{/festivals/{id}/reviews(id=${festival.id})}"
+	              th:object="${reviewForm}"
+	              method="post"
+	              enctype="multipart/form-data">
 
-		        <!-- 날짜 포맷 -->
-		        <span th:text="${review.createdAt != null ? #temporals.format(review.createdAt, 'yyyy-MM-dd') : ''}">
-		            날짜
-		        </span>
+	            <!-- 별점 -->
+	            <label for="rating">별점</label>
+	            <select id="rating" name="rating" th:field="*{rating}">
+					<option value="1">★☆☆☆☆</option>
+					<option value="2">★★☆☆☆</option>
+					<option value="3">★★★☆☆</option>
+					<option value="4">★★★★☆</option>
+					<option value="5">★★★★★</option>
+	            </select>
 
-		        <span th:text="${review.content}">내용</span>
-		        <span th:text="${review.rating} + '점'">0점</span>
+	            <!-- 내용 -->
+	            <label for="content">내용</label>
+	            <textarea id="content" name="content" th:field="*{content}" rows="4"></textarea>
 
-		        <span th:if="${review.attachmentId != null}">
-		            <a th:href="@{/files/{id}(id=${review.attachmentId})}">
-		                첨부 이미지 다운로드
-		            </a>
-		        </span>
+	            <!-- 첨부 이미지 -->
+	            <label for="imageFile">첨부 이미지 (선택)</label>
+	            <input type="file" id="imageFile" name="imageFile" accept="image/*"/>
 
-		        <!-- 🔽 여기에 버튼 -->
-		        <button type="button"
-		                class="delete-review-btn"
-		                th:data-id="${review.id}">
-		            삭제
-		        </button>
-		    </li>
-		</ul>
-    </section>
-	<script>
-	document.addEventListener("click", async (e) => {
-	    if (!e.target.matches(".delete-review-btn")) return;
+	            <!-- 검증 에러 메시지 -->
+	            <div th:if="${#fields.hasErrors('*')}" class="validation-errors">
+	                <p th:each="err : ${#fields.errors('*')}"
+	                   th:text="${err}">에러 메시지</p>
+	            </div>
 
-	    const id = e.target.dataset.id;
-	    if (!confirm("이 후기를 삭제할까요?")) return;
+	            <button type="submit">후기 등록</button>
+	        </form>
+	    </div>
 
-	    const res = await fetch(`/api/reviews/${id}`, { method: "DELETE" });
-	    if (res.ok) {
-	        e.target.closest("li")?.remove();
-	    } else {
-	        const body = await res.json().catch(() => null);
-	        alert(body?.message || "삭제 중 오류가 발생했습니다.");
-	    }
-	});
+	    <div th:if="${!loggedIn}">
+	        <p>로그인 후 후기를 작성할 수 있습니다.</p>
+	    </div>
+	</section>
+
+	<!-- ================== 후기 수정/삭제 스크립트 ================== -->
+	<script th:inline="javascript">
+	    // 리뷰 수정 버튼 클릭 핸들러
+	    document.addEventListener("click", function (e) {
+	        // 수정 버튼
+	        if (e.target.classList.contains("edit-review-btn")) {
+	            const btn = e.target;
+	            const reviewId = btn.dataset.id;
+	            const currentContent = btn.dataset.content;
+	            const currentRating = btn.dataset.rating;
+
+	            const newContent = prompt("수정할 후기를 입력하세요:", currentContent);
+	            if (newContent === null) {
+	                return; // 취소
+	            }
+
+	            const newRating = prompt("수정할 별점을 입력하세요 (1~5):", currentRating);
+	            if (newRating === null) {
+	                return;
+	            }
+
+	            fetch(`/api/reviews/${reviewId}`, {
+	                method: "PATCH",
+	                headers: {
+	                    "Content-Type": "application/json"
+	                },
+	                body: JSON.stringify({
+	                    content: newContent,
+	                    rating: Number(newRating)
+	                })
+	            })
+	                .then(res => {
+	                    if (!res.ok) {
+	                        throw new Error("리뷰 수정 실패");
+	                    }
+	                    return res.json();
+	                })
+	                .then(data => {
+	                    // 화면 내용 갱신
+	                    const li = btn.closest(".review-item");
+	                    if (!li) return;
+
+	                    const contentEl = li.querySelector(".review-content");
+	                    const ratingEl = li.querySelector(".review-rating");
+
+	                    if (contentEl) contentEl.textContent = data.content;
+	                    if (ratingEl) ratingEl.textContent = data.rating + "점";
+
+	                    // 버튼 data-*도 갱신
+	                    btn.dataset.content = data.content;
+	                    btn.dataset.rating = data.rating;
+
+	                    alert("리뷰가 수정되었습니다.");
+	                })
+	                .catch(err => {
+	                    console.error(err);
+	                    alert("리뷰 수정 중 오류가 발생했습니다.");
+	                });
+	        }
+
+	        // 삭제 버튼
+	        if (e.target.classList.contains("delete-review-btn")) {
+	            const btn = e.target;
+	            const reviewId = btn.dataset.id;
+
+	            if (!confirm("이 후기를 삭제하시겠습니까?")) {
+	                return;
+	            }
+
+	            fetch(`/api/reviews/${reviewId}`, {
+	                method: "DELETE"
+	            })
+	                .then(res => {
+	                    if (!res.ok && res.status !== 204) {
+	                        throw new Error("리뷰 삭제 실패");
+	                    }
+	                    // 화면에서 제거
+	                    const li = btn.closest(".review-item");
+	                    if (li) {
+	                        li.remove();
+	                    }
+	                    alert("리뷰가 삭제되었습니다.");
+	                })
+	                .catch(err => {
+	                    console.error(err);
+	                    alert("리뷰 삭제 중 오류가 발생했습니다.");
+	                });
+	        }
+	    });
 	</script>
-
     <p>
         <a th:href="@{/festivals}">전체 목록으로</a>
         <a th:href="@{/festivals/calendar(year=${year}, month=${month})}">캘린더로</a>
