@@ -1,0 +1,126 @@
+.detail-layout {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 24px 16px 40px;
+}
+
+/* 히어로 */
+.festival-hero {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 24px;
+    margin: 24px 0 32px;
+}
+
+.hero-info .hero-badge {
+    font-size: 13px;
+    color: #6c2bd9;
+    margin: 0 0 4px;
+}
+
+.hero-title {
+    font-size: 28px;
+    margin: 0 0 12px;
+}
+
+.hero-meta > div {
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.meta-label {
+    display: inline-block;
+    width: 52px;
+    color: #777;
+}
+
+.meta-value {
+    color: #222;
+}
+
+.meta-link {
+    color: #6c2bd9;
+    text-decoration: underline;
+}
+
+.hero-expected {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #555;
+}
+
+/* 이미지 */
+.hero-image {
+    border-radius: 16px;
+    overflow: hidden;
+    background: #e3e3e3;
+    height: 260px;
+}
+
+.hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.hero-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#777;
+    font-size:14px;
+}
+
+/* 공통 섹션 */
+.detail-section {
+    margin-bottom: 32px;
+}
+
+.detail-section h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.detail-overview {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #444;
+    white-space: pre-line;
+}
+
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.info-table th,
+.info-table td {
+    border-bottom: 1px solid #eee;
+    padding: 8px 6px;
+}
+
+.info-table th {
+    width: 120px;
+    color: #666;
+    text-align: left;
+    background: #fafafa;
+}
+
+.detail-address {
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #555;
+}
+
+/* 지도 */
+.detail-map {
+    width: 100%;
+    height: 260px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #e1e4ec;
+}

@@ -2,260 +2,198 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${festival.fcltyNm}">축제 상세</title>
+    <title th:text="|${festival.fcltyNm} - 축제 상세정보|">
+        축제 상세정보
+    </title>
+
+    <!-- 공통 헤더/레이아웃 스타일 -->
+    <link rel="stylesheet" th:href="@{/css/header.css}">
+    <link rel="stylesheet" th:href="@{/css/festivals-home.css}">
+    <!-- 상세페이지 전용 스타일 (hero, info-table, 지도 등) -->
+    <link rel="stylesheet" th:href="@{/css/detail.css}">
 </head>
 <body>
-    <div th:replace="fragments/header :: header"></div>
 
-    <h1 th:text="${festival.fcltyNm}">축제 이름</h1>
+<!-- 공통 헤더 프래그먼트 -->
+<div th:replace="~{fragments/header :: siteHeader}"></div>
 
-    <ul>
-        <li>
-            분류:
-            <span th:text="${festival.lclasNm}"></span> /
-            <span th:text="${festival.mlsfcNm}"></span>
-        </li>
-        <li>
-            기간:
-            <span th:text="${festival.fstvlBeginDe}"></span>
-            ~
-            <span th:text="${festival.fstvlEndDe}"></span>
-        </li>
-        <li>
-            지역:
-            <span th:text="${festival.ctprvnNm}"></span>
-            <span th:text="${festival.signguNm}"></span>
-        </li>
-        <li>
-            주소(법정동):
-            <span th:text="${festival.legaldongNm}"></span>
-        </li>
-        <li>
-            상세 주소(행정동):
-            <span th:text="${festival.adstrdNm}"></span>
-        </li>
-        <li>
-            위치:
-            위도 <span th:text="${festival.fcltyLa}"></span>,
-            경도 <span th:text="${festival.fcltyLo}"></span>
-        </li>
-        <li>
-            전화번호:
-            <span th:text="${festival.telNo}"></span>
-        </li>
-        <li>
-            홈페이지:
-            <a th:if="${festival.hmpgAddr != null}"
-               th:href="${festival.hmpgAddr}"
-               target="_blank"
-               th:text="${festival.hmpgAddr}">홈페이지</a>
-        </li>
-    </ul>
+<main class="detail-layout">
 
-    <h3>축제 소개</h3>
-    <p th:text="${festival.fstvlCn}">내용</p>
+    <!-- ===== 상단 히어로 영역 ===== -->
+    <section class="festival-hero">
+        <!-- 왼쪽: 텍스트 정보 -->
+        <div class="hero-info">
+            <p class="hero-badge">축제 상세정보</p>
 
-    <!-- ================== 예상 개최 시기 블럭 ================== -->
-    <div th:if="${expectedPeriod != null}">
-        <h3>예상 개최 시기 ([[${expectedPeriod.targetYear}]]년)</h3>
-        <p>
-            이 축제는 보통
-            <strong th:text="${expectedPeriod.month}">10</strong>월
-            <strong th:text="${expectedPeriod.weekOfMonth}">4</strong>주차
-            <strong th:text="${expectedPeriod.dayOfWeekKo}">토</strong>요일
-            (<span th:text="${expectedPeriod.sampleCount}">0</span>년치 데이터 기준)
+            <h1 class="hero-title" th:text="${festival.fcltyNm}">
+                부산국제아동도서전
+            </h1>
+
+            <div class="hero-meta">
+                <div>
+                    <span class="meta-label">기간</span>
+                    <span class="meta-value"
+                          th:text="${#temporals.format(festival.fstvlBeginDe, 'yyyy.MM.dd')} + ' ~ ' +
+                                   ${#temporals.format(festival.fstvlEndDe,   'yyyy.MM.dd')}">
+                        2025.12.11 ~ 2025.12.14
+                    </span>
+                </div>
+
+                <div>
+                    <span class="meta-label">장소</span>
+                    <span class="meta-value"
+                          th:text="${festival.ctprvnNm + ' ' + festival.signguNm}">
+                        부산 해운대구
+                    </span>
+                </div>
+
+                <div th:if="${festival.telNo}">
+                    <span class="meta-label">문의</span>
+                    <span class="meta-value" th:text="${festival.telNo}">
+                        051-000-0000
+                    </span>
+                </div>
+
+                <div th:if="${festival.hmpgAddr}">
+                    <span class="meta-label">홈페이지</span>
+                    <a class="meta-link"
+                       th:href="${festival.hmpgAddr}"
+                       target="_blank"
+                       th:text="${festival.hmpgAddr}">
+                        홈페이지 바로가기
+                    </a>
+                </div>
+            </div>
+
+            <!-- 예상 방문 소요 시간 같은 부가 정보가 있을 때만 표시 -->
+            <p class="hero-expected"
+               th:if="${expectedPeriod != null}"
+               th:text="|예상 방문 소요 시간: ${expectedPeriod}|">
+                예상 방문 소요 시간: 반나절
+            </p>
+        </div>
+
+        <!-- 오른쪽: 대표 이미지 -->
+        <div class="hero-image">
+            <img th:if="${festival.firstImageUrl != null}"
+                 th:src="${festival.firstImageUrl}"
+                 alt="축제 대표 이미지">
+            <div th:if="${festival.firstImageUrl == null}" class="hero-image-placeholder">
+                대표 이미지가 없습니다.
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 축제 소개 섹션 ===== -->
+    <section class="detail-section">
+        <h2>축제 소개</h2>
+
+        <!-- overview가 있으면 overview 사용 -->
+        <p class="detail-overview" th:if="${festival.overview != null}"
+           th:text="${festival.overview}">
+            축제에 대한 소개 문구가 들어갑니다.
         </p>
-    </div>
 
-	<!-- ================== 후기 섹션 시작 ================== -->
-	<section id="reviews" class="review-section">
-	    <h2>축제 후기</h2>
+        <!-- overview가 없고 fstvlCn이 있으면 fstvlCn 사용 -->
+        <p class="detail-overview"
+           th:if="${festival.overview == null && festival.fstvlCn != null}"
+           th:text="${festival.fstvlCn}">
+            상세 설명 텍스트
+        </p>
 
-	    <!-- ✅ 후기 리스트: 없을 때 -->
-	    <div th:if="${#lists.isEmpty(reviews)}">
-	        <p>등록된 후기가 아직 없습니다. 첫 후기를 남겨보세요!</p>
-	    </div>
+        <!-- 둘 다 없으면 안내 문구 -->
+        <p class="detail-overview"
+           th:if="${festival.overview == null && festival.fstvlCn == null}">
+            현재 제공되는 상세 소개 문구가 없습니다.
+        </p>
+    </section>
 
-	    <!-- ✅ 후기 리스트: 있을 때 -->
-	    <ul th:if="${!#lists.isEmpty(reviews)}" class="review-list">
-	        <li th:each="review : ${reviews}" class="review-item">
-	            <!-- 닉네임 -->
-	            <span class="review-nickname" th:text="${review.nickname}">닉네임</span>
+    <!-- ===== 기본 정보 테이블 ===== -->
+    <section class="detail-section">
+        <h2>기본 정보</h2>
 
-	            <!-- 작성일 -->
-	            <span class="review-date"
-	                  th:text="${review.createdAt != null ? #temporals.format(review.createdAt, 'yyyy-MM-dd') : ''}">
-	                날짜
-	            </span>
+        <table class="info-table">
+            <tr>
+                <th>개최 기간</th>
+                <td th:text="${#temporals.format(festival.fstvlBeginDe, 'yyyy.MM.dd')} + ' ~ ' +
+                             ${#temporals.format(festival.fstvlEndDe,   'yyyy.MM.dd')}">
+                    2025.12.11 ~ 2025.12.14
+                </td>
+            </tr>
+            <tr>
+                <th>개최 장소</th>
+                <td th:text="${festival.addr1}">
+                    부산 해운대구 벡스코 일원
+                </td>
+            </tr>
+            <tr th:if="${festival.originNm}">
+                <th>주최 / 주관</th>
+                <td th:text="${festival.originNm}">
+                    주최/주관 정보
+                </td>
+            </tr>
+            <tr th:if="${festival.mlsfcNm}">
+                <th>축제 유형</th>
+                <td th:text="${festival.mlsfcNm}">
+                    전시/체험
+                </td>
+            </tr>
+        </table>
+    </section>
 
-	            <!-- 내용 -->
-	            <p class="review-content" th:text="${review.content}">내용</p>
+    <!-- ===== 위치 정보 & 지도 ===== -->
+    <section class="detail-section">
+        <h2>위치 정보</h2>
 
-	            <!-- 별점 -->
-	            <span class="review-rating" th:text="${review.rating} + '점'">0점</span>
+        <p class="detail-address" th:text="${festival.addr1}">
+            주소 텍스트
+        </p>
 
-	            <!-- 첨부 이미지 다운로드 링크 -->
-	            <span th:if="${review.attachmentId != null}">
-	                <a th:href="@{/files/{id}(id=${review.attachmentId})}">
-	                    첨부 이미지 다운로드
-	                </a>
-	            </span>
+        <div id="festivalDetailMap" class="detail-map"></div>
+    </section>
 
-				<!-- ✅ 현재 로그인한 회원이 쓴 리뷰일 때만 수정/삭제 버튼 노출 -->
-				<div th:if="${currentMemberId != null
-							and review.member != null
-				            and review.member.id == currentMemberId}">
-						<button type="button"
-				                class="edit-review-btn"
-				                th:data-id="${review.id}"
-				                th:data-content="${review.content}"
-				                th:data-rating="${review.rating}">
-				                수정
-							</button>
-				        <button type="button"
-				                class="delete-review-btn"
-				                th:data-id="${review.id}">
-				                삭제
-				            </button>
-						</div>
-					</li>
-				</ul>
+    <!-- ===== 뒤로가기 / 목록 버튼 (선택사항) ===== -->
+    <section class="detail-section">
+        <a th:href="@{/festivals/list}" class="back-link">목록으로 돌아가기</a>
+    </section>
 
-	    <hr/>
-	    <!-- 후기 작성 폼 -->
-	    <div th:if="${loggedIn}">
-	        <h3>후기 작성하기</h3>
-	        <form th:action="@{/festivals/{id}/reviews(id=${festival.id})}"
-	              th:object="${reviewForm}"
-	              method="post"
-	              enctype="multipart/form-data">
+    <!-- ===== 여기 밑에는 필요하면 '비슷한 축제', '리뷰' 같은 섹션을 추가해서 써도 됨 ===== -->
+    <!--
+    <section class="detail-section">
+        <h2>비슷한 축제</h2>
+        ...
+    </section>
+    -->
 
-	            <!-- 별점 -->
-	            <label for="rating">별점</label>
-	            <select id="rating" name="rating" th:field="*{rating}">
-					<option value="1">★☆☆☆☆</option>
-					<option value="2">★★☆☆☆</option>
-					<option value="3">★★★☆☆</option>
-					<option value="4">★★★★☆</option>
-					<option value="5">★★★★★</option>
-	            </select>
+</main>
 
-	            <!-- 내용 -->
-	            <label for="content">내용</label>
-	            <textarea id="content" name="content" th:field="*{content}" rows="4"></textarea>
+<!-- ✅ 네이버 지도 API 스크립트 -->
+<script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=imrp8lidfv"> </script>
 
-	            <!-- 첨부 이미지 -->
-	            <label for="imageFile">첨부 이미지 (선택)</label>
-	            <input type="file" id="imageFile" name="imageFile" accept="image/*"/>
+<!-- 상세 페이지 지도 스크립트 -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+    // 위도/경도 (엔티티 필드명에 맞게 fcltyLa, fcltyLo 사용)
+    var lat = /*[[${festival.fcltyLa}]]*/ 35.1796;
+    var lng = /*[[${festival.fcltyLo}]]*/ 129.0756;
 
-	            <!-- 검증 에러 메시지 -->
-	            <div th:if="${#fields.hasErrors('*')}" class="validation-errors">
-	                <p th:each="err : ${#fields.errors('*')}"
-	                   th:text="${err}">에러 메시지</p>
-	            </div>
+    // 좌표가 없으면 기본값으로 부산 시청 근처 사용
+    if (lat == null || lng == null) {
+        lat = 35.1796;
+        lng = 129.0756;
+    }
 
-	            <button type="submit">후기 등록</button>
-	        </form>
-	    </div>
+    var map = new naver.maps.Map('festivalDetailMap', {
+        center: new naver.maps.LatLng(lat, lng),
+        zoom: 14
+    });
 
-	    <div th:if="${!loggedIn}">
-	        <p>로그인 후 후기를 작성할 수 있습니다.</p>
-	    </div>
-	</section>
+    var marker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(lat, lng),
+        map: map
+    });
+/*]]>*/
+</script>
 
-	<!-- ================== 후기 수정/삭제 스크립트 ================== -->
-	<script th:inline="javascript">
-	    // 리뷰 수정 버튼 클릭 핸들러
-	    document.addEventListener("click", function (e) {
-	        // 수정 버튼
-	        if (e.target.classList.contains("edit-review-btn")) {
-	            const btn = e.target;
-	            const reviewId = btn.dataset.id;
-	            const currentContent = btn.dataset.content;
-	            const currentRating = btn.dataset.rating;
-
-	            const newContent = prompt("수정할 후기를 입력하세요:", currentContent);
-	            if (newContent === null) {
-	                return; // 취소
-	            }
-
-	            const newRating = prompt("수정할 별점을 입력하세요 (1~5):", currentRating);
-	            if (newRating === null) {
-	                return;
-	            }
-
-	            fetch(`/api/reviews/${reviewId}`, {
-	                method: "PATCH",
-	                headers: {
-	                    "Content-Type": "application/json"
-	                },
-	                body: JSON.stringify({
-	                    content: newContent,
-	                    rating: Number(newRating)
-	                })
-	            })
-	                .then(res => {
-	                    if (!res.ok) {
-	                        throw new Error("리뷰 수정 실패");
-	                    }
-	                    return res.json();
-	                })
-	                .then(data => {
-	                    // 화면 내용 갱신
-	                    const li = btn.closest(".review-item");
-	                    if (!li) return;
-
-	                    const contentEl = li.querySelector(".review-content");
-	                    const ratingEl = li.querySelector(".review-rating");
-
-	                    if (contentEl) contentEl.textContent = data.content;
-	                    if (ratingEl) ratingEl.textContent = data.rating + "점";
-
-	                    // 버튼 data-*도 갱신
-	                    btn.dataset.content = data.content;
-	                    btn.dataset.rating = data.rating;
-
-	                    alert("리뷰가 수정되었습니다.");
-	                })
-	                .catch(err => {
-	                    console.error(err);
-	                    alert("리뷰 수정 중 오류가 발생했습니다.");
-	                });
-	        }
-
-	        // 삭제 버튼
-	        if (e.target.classList.contains("delete-review-btn")) {
-	            const btn = e.target;
-	            const reviewId = btn.dataset.id;
-
-	            if (!confirm("이 후기를 삭제하시겠습니까?")) {
-	                return;
-	            }
-
-	            fetch(`/api/reviews/${reviewId}`, {
-	                method: "DELETE"
-	            })
-	                .then(res => {
-	                    if (!res.ok && res.status !== 204) {
-	                        throw new Error("리뷰 삭제 실패");
-	                    }
-	                    // 화면에서 제거
-	                    const li = btn.closest(".review-item");
-	                    if (li) {
-	                        li.remove();
-	                    }
-	                    alert("리뷰가 삭제되었습니다.");
-	                })
-	                .catch(err => {
-	                    console.error(err);
-	                    alert("리뷰 삭제 중 오류가 발생했습니다.");
-	                });
-	        }
-	    });
-	</script>
-    <p>
-        <a th:href="@{/festivals}">전체 목록으로</a>
-        <a th:href="@{/festivals/calendar(year=${year}, month=${month})}">캘린더로</a>
-    </p>
 </body>
 </html>
