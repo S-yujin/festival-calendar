@@ -27,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -57,23 +58,27 @@ public class FestivalsController {
 
     // 메인 페이지
     @GetMapping
-    public String festivalsHome(Model model) {
-        // 오늘 날짜 기준
+    public String festivalMain(Model model) {
         LocalDate today = LocalDate.now();
+        YearMonth nowMonth = YearMonth.now();   // import java.time.YearMonth;
 
-        // 오늘 진행 중인 축제 전체 조회
-        List<Festivals> ongoingAll = repository
-                .findByFstvlBeginDeLessThanEqualAndFstvlEndDeGreaterThanEqual(today, today);
+        List<Festivals> ongoingFestivals =
+        		repository
+                        .findTop8ByFstvlBeginDeLessThanEqualAndFstvlEndDeGreaterThanEqualOrderByFstvlBeginDeAsc(
+                                today, today);
 
-        // 메인에는 4개만 맛보기
-        List<Festivals> ongoingPreview = ongoingAll.stream()
-                .limit(4)
-                .collect(Collectors.toList());
+        LocalDate start = nowMonth.atDay(1);
+        LocalDate end = nowMonth.atEndOfMonth();
 
-        model.addAttribute("today", today);
-        model.addAttribute("ongoingFestivals", ongoingPreview);
+        List<Festivals> monthlyFestivals =
+        		repository
+                        .findTop8ByFstvlBeginDeBetweenOrderByFstvlBeginDeAsc(start, end);
 
-        return "festivals-home";   // festivals-home.html
+        model.addAttribute("ongoingFestivals", ongoingFestivals);
+        model.addAttribute("monthlyFestivals", monthlyFestivals);
+        model.addAttribute("year", nowMonth.getYear());
+
+        return "festivals-home";   // 템플릿 이름 맞게
     }
 
     // 리스트 기반 검색 화면

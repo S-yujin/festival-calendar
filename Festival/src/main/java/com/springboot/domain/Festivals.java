@@ -3,15 +3,15 @@ package com.springboot.domain;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA용 기본 생성자 자동 생성
 @AllArgsConstructor                              // 모든 필드 받는 생성자
 @Entity
+@Data
 @Table(name = "festival")
 public class Festivals {
 
@@ -72,4 +72,19 @@ public class Festivals {
 
     @Column(name = "origin_nm")
     private String originNm;
+    
+    // TourAPI에서 채우는 축제 상세 설명
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String overview;
+
+    // TourAPI에서 채우는 대표 이미지 URL 
+    private String firstImageUrl;
+
+    // TourAPI에서 채우는 주소
+    private String addr1;
+
+    // 위도 / 경도 (문자열로 저장)
+    private String mapY;  // 위도
+    private String mapX;  // 경도
 }
