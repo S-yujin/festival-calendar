@@ -1,52 +1,65 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-	<link rel="stylesheet" th:href="@{/css/sigup.css}">
-	
-    <meta charset="UTF-8">
-    <title>회원가입</title>
+    <meta charset="UTF-8" />
+    <title>회원가입 - Festival Service</title>
+
+    <!-- 로그인 화면에서 쓰던 CSS 그대로 재사용 -->
+    <link rel="stylesheet" th:href="@{/css/auth.css}" />
 </head>
-<body>
-<h1>회원가입</h1>
+<body class="auth-body">
 
-<form th:action="@{/auth/signup}" th:object="${signupForm}" method="post">
-    <div>
-        <label>이름</label>
-        <input type="text" th:field="*{name}"/>
-        <div th:if="${#fields.hasErrors('name')}"
-             th:errors="*{name}"></div>
+<header class="auth-header">
+    <div class="auth-logo">
+        <a th:href="@{/}">Festival Service</a>
     </div>
+    <nav class="auth-nav">
+        <a th:href="@{/auth/login}">로그인</a>
+        <a th:href="@{/auth/signup}" class="active">회원가입</a>
+    </nav>
+</header>
 
-    <div>
-        <label>이메일</label>
-        <input type="text" th:field="*{email}"/>
-        <div th:if="${#fields.hasErrors('email')}"
-             th:errors="*{email}"></div>
-    </div>
+<main class="auth-main">
+    <section class="auth-card">
+        <h1 class="auth-title">회원가입</h1>
+        <p class="auth-subtitle">Festival Service에 오신 걸 환영해요 🎉</p>
 
-    <div>
-        <label>비밀번호</label>
-        <input type="password" th:field="*{password}"/>
-        <div th:if="${#fields.hasErrors('password')}"
-             th:errors="*{password}"></div>
-    </div>
+        <!-- 기존 폼 구조에 맞게 th:object / th:field 이름만 맞춰줘 -->
+        <form th:action="@{/auth/signup}" method="post" th:object="${signupForm}">
+            <div class="auth-input-group">
+                <label for="name">이름</label>
+                <input id="name" type="text" th:field="*{name}"
+                       placeholder="홍길동" required />
+            </div>
 
-    <div>
-        <label>비밀번호 확인</label>
-        <input type="password" th:field="*{passwordConfirm}"/>
-        <div th:if="${#fields.hasErrors('passwordConfirm')}"
-             th:errors="*{passwordConfirm}"></div>
-    </div>
+            <div class="auth-input-group">
+                <label for="email">이메일</label>
+                <input id="email" type="email" th:field="*{email}"
+                       placeholder="example@domain.com" required />
+            </div>
 
-    <div>
-        <button type="submit">가입하기</button>
-    </div>
-</form>
+            <div class="auth-input-group">
+                <label for="password">비밀번호</label>
+                <input id="password" type="password" th:field="*{password}"
+                       placeholder="8자 이상 입력" required />
+            </div>
 
-<p>
-    이미 계정이 있으신가요?
-    <a th:href="@{/auth/login}">로그인</a>
-</p>
+            <div class="auth-input-group">
+                <label for="passwordConfirm">비밀번호 확인</label>
+                <!-- 백엔드에서 쓰는 필드 이름에 맞게 변경 (passwordConfirm / passwordCheck 등) -->
+                <input id="passwordConfirm" type="password" th:field="*{passwordConfirm}"
+                       placeholder="다시 한 번 입력" required />
+            </div>
+
+            <button type="submit" class="auth-button">가입하기</button>
+        </form>
+
+        <p class="auth-footer-text">
+            이미 계정이 있으신가요?
+            <a th:href="@{/auth/login}">로그인</a>
+        </p>
+    </section>
+</main>
 
 </body>
 </html>
