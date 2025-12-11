@@ -3,62 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <title>마이페이지</title>
+	<link rel="stylesheet" th:href="@{/css/auth.css}"/>
+	<link rel="stylesheet" th:href="@{/css/mypage.css}"/>
+	<link rel="stylesheet" th:href="@{/css/header.css}"/>
 </head>
 <body>
+<div th:replace="~{fragments/header :: siteHeader}"></div>
 
-	<!-- 공통 헤더 -->
-	<div th:replace="~{fragments/header :: siteHeader}"></div>
-	<div class="container mt-4">
+<main class="page-wrapper">
+    <section class="mypage-card">
+        <div class="mypage-header">
+            <h1 class="mypage-title">마이페이지</h1>
+            <p class="mypage-subtitle">
+                내 계정 정보를 확인하고 수정할 수 있어요.
+            </p>
+        </div>
 
-	    <div th:if="${param.passwordChanged}" class="alert alert-success">
-	        비밀번호가 성공적으로 변경되었습니다.
-	    </div>
+        <h2 class="mypage-section-title">기본 정보</h2>
+        <div class="mypage-info">
+            <div class="mypage-info-row">
+                <span class="mypage-info-label">이름</span>
+                <span class="mypage-info-value" th:text="${member.name}">홍길동</span>
+            </div>
+            <div class="mypage-info-row">
+                <span class="mypage-info-label">이메일</span>
+                <span class="mypage-info-value" th:text="${member.email}">test@gmail.com</span>
+            </div>
+            <div class="mypage-info-row">
+                <span class="mypage-info-label">가입일</span>
+                <span class="mypage-info-value"
+                      th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm')}">
+                    2025-12-05 16:17
+                </span>
+            </div>
+        </div>
 
-	<main class="container">
-	    <h1>마이페이지</h1>
-	
-	    <section>
-	        <p>
-	            <strong>이름:</strong>
-	            <span th:text="${member.name}">홍길동</span>
-	        </p>
-	        <p>
-	            <strong>이메일:</strong>
-	            <span th:text="${member.email}">test@example.com</span>
-	        </p>
-	        <p>
-	            <strong>가입일:</strong>
-	            <span th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm')}">
-	                2025-12-01
-	            </span>
-	        </p>
-	    </section>
-	
-	    <!-- 나중에 여기 아래에
-	         - 내가 찜한 축제
-	         - 내가 쓴 리뷰
-	         이런 것들 붙이면 됨 -->
-			 <p>
-				<a th:href="@{/members/edit}">프로필 수정</a>
-				<a th:href="@{/members/password}">비밀번호 변경</a>
-			 </p>
-			 
-			 <div th:if="${param.passwordChanged}">
-			     <p style="color: green;">비밀번호가 성공적으로 변경되었습니다.</p>
-			 </div>
-			 
-			 <form th:action="@{/members/delete}" method="post"
-			       onsubmit="return confirm('정말 회원 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.');">
-			     <!-- CSRF 사용 중이면 이거 필요 -->
-				 <input type="hidden"
-				            th:if="${_csrf != null}"
-				            th:name="${_csrf.parameterName}"
-				            th:value="${_csrf.token}" />
-			     <button type="submit" class="btn btn-danger">
-			         회원 탈퇴
-			     </button>
-			 </form>
-	</main>
+        <div class="mypage-actions-main">
+            <a th:href="@{/members/edit}">
+                <button type="button" class="btn-primary">프로필 수정</button>
+            </a>
+
+            <a th:href="@{/members/password}">
+                <button type="button" class="btn-secondary">비밀번호 변경</button>
+            </a>
+        </div>
+
+        <div class="mypage-danger">
+            <form th:action="@{/members/delete}" method="post">
+                <button type="submit" class="btn-danger">회원 탈퇴</button>
+            </form>
+        </div>
+    </section>
+</main>
 
 </body>
 </html>
