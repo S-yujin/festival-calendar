@@ -1,42 +1,52 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+	<link rel="stylesheet" th:href="@{/css/header.css}">
+	<link rel="stylesheet" th:href="@{/css/login.css}">
+	
     <meta charset="UTF-8">
     <title>로그인</title>
 </head>
 <body>
-	<div th:replace="fragments/header :: header"></div>
-	
-	<h1>로그인</h1>
+<div th:replace="fragments/header :: header"></div>
 
-	<form th:action="@{/auth/login}" method="post">
-    	<div>
-        	<label>이메일</label>
-        	<input type="text" name="email"/>
-    	</div>
-    	<div>
-       		<label>비밀번호</label>
-        	<input type="password" name="password"/>
-    	</div>
-		<div class="container mt-4">
-		    <!-- 회원가입 성공 메시지 -->
-		    <div th:if="${param.signupSuccess}" class="alert alert-success">
-		        회원가입이 완료되었습니다. 로그인 후 이용해주세요.
-		    </div>
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h1 class="auth-title">로그인</h1>
+        <p class="auth-subtitle">Festival Service에 다시 오신 걸 환영해요 👋</p>
 
-		    <!-- 로그인 실패 메시지 -->
-		    <div th:if="${param.error}" class="alert alert-danger">
-		        이메일 또는 비밀번호가 올바르지 않습니다.
-		    </div>
-    	<div>
-        	<button type="submit">로그인</button>
-    	</div>
-	</form>
+        <form th:action="@{/auth/login}" method="post" class="auth-form">
+            <div class="message-wrapper">
+                <!-- 회원가입 성공 메시지 -->
+                <div th:if="${param.signupSuccess}" class="alert alert-success">
+                    회원가입이 완료되었습니다. 로그인 후 이용해주세요.
+                </div>
 
-	<p>
-    	아직 회원이 아니신가요?
-    	<a th:href="@{/auth/signup}">회원가입</a>
-	</p>
+                <!-- 로그인 실패 메시지 -->
+                <div th:if="${param.error}" class="alert alert-danger">
+                    이메일 또는 비밀번호가 올바르지 않습니다.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">이메일</label>
+                <input id="email" type="text" name="email"/>
+            </div>
+
+            <div class="form-group">
+                <label for="password">비밀번호</label>
+                <input id="password" type="password" name="password"/>
+            </div>
+
+            <button type="submit" class="btn-primary">로그인</button>
+        </form>
+
+        <p class="auth-footer">
+            아직 회원이 아니신가요?
+            <a th:href="@{/auth/signup}">회원가입</a>
+        </p>
+    </div>
+</div>
 
 </body>
 </html>
