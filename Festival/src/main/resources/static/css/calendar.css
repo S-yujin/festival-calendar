@@ -312,3 +312,104 @@
         flex: none;
     }
 }
+
+/* ===== 이달의 축제 목록 (카드형) ===== */
+
+.month-list-section {
+    margin-top: 40px;
+}
+
+.month-list-body {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+/* 왼쪽 날짜 정보 */
+.day-info {
+    width: 110px;
+    text-align: left;
+}
+
+.day-text {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.day-dow {
+    margin-top: 4px;
+    font-size: 14px;
+    color: #777;
+}
+
+/* 오른쪽 카드 영역 */
+.month-card-wrapper {
+    flex: 1;
+}
+
+/* 카드 그리드 */
+.month-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+/* 개별 카드 */
+.month-festival-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid #eee;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.month-festival-card a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.month-festival-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+/* 제목 / 메타 정보 */
+.month-festival-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    line-height: 1.4;
+}
+
+.month-festival-meta {
+    margin: 0;
+    font-size: 13px;
+    color: #555;
+}
+
+.month-festival-meta .dot {
+    margin: 0 4px;
+    color: #ccc;
+}
+
+.no-festival-text {
+    margin-top: 4px;
+    font-size: 14px;
+    color: #777;
+}
+
+/* 모바일에서 세로 정렬 */
+@media (max-width: 768px) {
+    .month-list-body {
+        flex-direction: column;
+    }
+
+    .day-info {
+        width: 100%;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+}
