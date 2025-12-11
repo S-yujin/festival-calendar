@@ -152,23 +152,86 @@
         <div id="festivalDetailMap" class="detail-map"></div>
     </section>
 
-    <!-- ===== 뒤로가기 / 목록 버튼 (선택사항) ===== -->
+    <!-- ===== 축제 리뷰 ===== -->
+    <section class="detail-section review-section">
+        <div class="section-header">
+            <h2 class="section-title">축제 리뷰</h2>
+        </div>
+
+        <!-- 리뷰가 하나도 없을 때 -->
+        <div th:if="${#lists.isEmpty(reviews)}" class="review-empty">
+            아직 등록된 리뷰가 없습니다. 첫 리뷰를 남겨보세요!
+        </div>
+
+        <!-- 리뷰 목록 -->
+        <ul th:if="${!#lists.isEmpty(reviews)}" class="review-list">
+            <li th:each="review : ${reviews}" class="review-item">
+                <div class="review-header">
+                    <div class="review-meta">
+                        <span class="review-nickname"
+                              th:text="${review.nickname}">닉네임</span>
+                        <span class="review-date"
+                              th:text="${#temporals.format(review.createdAt, 'yyyy.MM.dd')}">
+                            2025.12.11
+                        </span>
+                    </div>
+                    <div class="review-rating">
+                        <span class="star">★</span>
+                        <span th:text="${review.rating}">5</span>
+                        <span class="rating-unit"> / 5</span>
+                    </div>
+                </div>
+
+                <p class="review-content" th:text="${review.content}">
+                    리뷰 내용입니다.
+                </p>
+
+                <div class="review-footer">
+                    <a th:if="${review.attachmentId != null}"
+                       th:href="@{/files/{id}(id=${review.attachmentId})}"
+                       class="review-attachment">
+                        첨부 이미지 다운로드
+                    </a>
+
+                    <!-- 본인 리뷰일 때만 수정/삭제 버튼 -->
+                    <div class="review-actions"
+                         th:if="${session.member != null and session.member.id == review.memberId}">
+                        <button type="button"
+                                class="btn-text edit-review-btn"
+                                th:data-id="${review.id}"
+                                th:data-content="${review.content}"
+                                th:data-rating="${review.rating}">
+                            수정
+                        </button>
+                        <button type="button"
+                                class="btn-text delete-review-btn"
+                                th:data-id="${review.id}">
+                            삭제
+                        </button>
+                    </div>
+                </div>
+            </li>
+        </ul>
+
+        <!-- 로그인 안내 -->
+        <div class="review-login-hint" th:if="${session.member == null}">
+            리뷰를 남기려면 먼저
+            <a th:href="@{/auth/login}" class="link-inline">로그인</a>
+            해주세요.
+        </div>
+    </section>
+
+    <!-- ===== 뒤로가기 / 목록 버튼 ===== -->
     <section class="detail-section">
         <a th:href="@{/festivals/list}" class="back-link">목록으로 돌아가기</a>
     </section>
 
-    <!-- ===== 여기 밑에는 필요하면 '비슷한 축제', '리뷰' 같은 섹션을 추가해서 써도 됨 ===== -->
-    <!--
-    <section class="detail-section">
-        <h2>비슷한 축제</h2>
-        ...
-    </section>
-    -->
-
 </main>
 
 <!-- ✅ 네이버 지도 API 스크립트 -->
-<script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=imrp8lidfv"> </script>
+<script type="text/javascript"
+        src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=imrp8lidfv">
+</script>
 
 <!-- 상세 페이지 지도 스크립트 -->
 <script th:inline="javascript">

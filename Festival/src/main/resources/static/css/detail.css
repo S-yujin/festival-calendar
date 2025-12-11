@@ -124,3 +124,115 @@
     overflow: hidden;
     background: #e1e4ec;
 }
+/* ---------- 리뷰 영역 ---------- */
+
+.review-section {
+    margin-top: 56px;
+}
+
+.review-list {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.review-item {
+    padding: 16px 20px;
+    border-radius: 12px;
+    background-color: #fafafa;
+    border: 1px solid #eeeeee;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.review-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.review-nickname {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.review-date {
+    font-size: 12px;
+    color: #999999;
+}
+
+.review-rating {
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.review-rating .star {
+    font-size: 16px;
+    color: #ffb400;
+}
+
+.review-content {
+    margin: 8px 0 10px;
+    line-height: 1.5;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.review-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    gap: 8px;
+}
+
+.review-attachment {
+    text-decoration: underline;
+    color: #666666;
+}
+
+.review-attachment:hover {
+    color: #4f46e5;
+}
+
+.review-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-text {
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: 13px;
+    color: #666666;
+    cursor: pointer;
+}
+
+.btn-text:hover {
+    color: #4f46e5;
+}
+
+.review-empty,
+.review-login-hint {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #666666;
+}
+
+.review-login-hint .link-inline {
+    text-decoration: underline;
+    font-weight: 500;
+}
