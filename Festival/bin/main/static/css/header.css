@@ -1,0 +1,47 @@
+/* === 헤더 공통 스타일 === */
+.top-header {
+    height: 64px;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
+    background: #ffffff;
+}
+
+.logo a {
+    font-weight: 700;
+    font-size: 20px;
+    text-decoration: none;
+    color: #111;
+}
+
+.auth-links {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+}
+
+.auth-links a {
+    text-decoration: none;
+    color: #111;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+.logout-form {
+    display: inline;
+}
+
+.logout-form button {
+    margin-left: 8px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 14px;
+    color: #111;
+}

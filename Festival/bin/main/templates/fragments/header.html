@@ -3,31 +3,30 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 <header th:fragment="siteHeader">
-    <nav class="nav">
-        <!-- 로고 / 홈 링크 -->
-        <a th:href="@{/festivals}" class="logo">Festival Service</a>
+    <div class="top-header">
+        <!-- 왼쪽 로고 -->
+        <div class="logo">
+            <a th:href="@{/festivals}">Festival Service</a>
+        </div>
 
-        <!-- 오른쪽 메뉴 -->
-        <div class="nav-right">
+        <!-- 오른쪽 로그인/회원가입 / 마이페이지/로그아웃 -->
+        <div class="auth-links">
 
-            <!-- 1) 비로그인 상태: 로그인 / 회원가입 -->
+            <!-- 비로그인 -->
             <div sec:authorize="isAnonymous()">
                 <a th:href="@{/auth/login}">로그인</a>
                 <a th:href="@{/auth/signup}">회원가입</a>
             </div>
 
-            <!-- 2) 로그인 상태: OOO님 환영합니다 / 로그아웃 -->
+            <!-- 로그인 -->
             <div sec:authorize="isAuthenticated()">
-                <!-- username 이 이메일이면 email님 환영합니다 로 나옴 -->
                 <span th:text="${#authentication.name} + '님 환영합니다'">
                     OOO님 환영합니다
                 </span>
-				
-				<!-- 마이페이지 -->
-				<a th:href="@{/members/me}" style="margin-left: 8px;">마이페이지</a>
 
-                <form th:action="@{/logout}" method="post" style="display:inline;">
-                    <!-- CSRF 켜져 있을 때만 hidden 넣기 -->
+                <a th:href="@{/members/me}" style="margin-left: 8px;">마이페이지</a>
+
+                <form th:action="@{/logout}" method="post" class="logout-form">
                     <input th:if="${_csrf != null}" type="hidden"
                            th:name="${_csrf.parameterName}"
                            th:value="${_csrf.token}" />
@@ -36,7 +35,7 @@
             </div>
 
         </div>
-    </nav>
+    </div>
 </header>
 </body>
 </html>
