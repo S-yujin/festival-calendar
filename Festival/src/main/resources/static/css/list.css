@@ -1,0 +1,182 @@
+/* 전체 레이아웃 기본값 */
+* { box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* 오른쪽 지도는 고정, 왼쪽만 스크롤하기 위해 body 스크롤 막고
+   main에서만 스크롤 허용 */
+body {
+    overflow: hidden;
+    background: #f7f7f7;
+    color: #111;
+}
+
+/* 상단 헤더 */
+.top-header {
+    height: 64px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+}
+
+.logo a {
+    font-weight: 700;
+    font-size: 20px;
+    text-decoration: none;
+    color: #111;
+}
+
+.main-nav a {
+    margin: 0 12px;
+    text-decoration: none;
+    color: #555;
+    font-size: 15px;
+}
+
+.main-nav a.active {
+    color: #6c2bd9;
+    border-bottom: 2px solid #6c2bd9;
+    padding-bottom: 4px;
+}
+
+.header-actions a {
+    margin-left: 12px;
+    font-size: 14px;
+    text-decoration: none;
+    color: #555;
+}
+
+/* 필터 바 */
+.filter-bar {
+    height: 64px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    gap: 8px;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid #ddd;
+    background: #fff;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.filter-right {
+    margin-left: auto;
+    font-size: 13px;
+    color: #777;
+}
+
+.sort-link {
+    margin-left: 12px;
+    cursor: pointer;
+}
+
+.sort-link.active {
+    color: #6c2bd9;
+    font-weight: 600;
+}
+
+/* 2컬럼 레이아웃 */
+.page-2col {
+    height: calc(100vh - 64px - 64px); /* 헤더 + 필터 높이 제외 */
+    display: flex;
+}
+
+/* 왼쪽 리스트 패널만 스크롤 */
+.list-panel {
+    flex: 0 0 55%;           /* 55% / 45% 정도 비율 */
+    padding: 16px 24px 24px;
+    overflow-y: auto;        /* 여기만 스크롤 */
+}
+
+/* 카드 리스트 */
+.card-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.festival-card {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+}
+
+.festival-card a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.card-thumb {
+    height: 220px;
+    background: #ddd;
+}
+
+.card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.card-body {
+    padding: 14px 18px 16px;
+}
+
+.status-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #5b3dd9;
+    color: #fff;
+    margin-bottom: 6px;
+}
+
+.card-title {
+    font-size: 18px;
+    margin: 0 0 4px;
+}
+
+.card-period {
+    font-size: 14px;
+    color: #555;
+    margin: 0 0 2px;
+}
+
+.card-loc {
+    font-size: 14px;
+    color: #777;
+    margin: 0;
+}
+
+/* 오른쪽 지도 패널 (고정) */
+.map-panel {
+    flex: 0 0 45%;
+    border-left: 1px solid #eee;
+    background: #e9edf4;
+    /* position: relative;  <= 이거 굳이 안 써도 됨 */
+}
+
+/* 지도 div를 화면 높이에 꽉 채우기 */
+#festivalMap {
+    /* position: absolute;
+    inset: 0; */
+    width: 100%;
+    height: 100%;
+}
