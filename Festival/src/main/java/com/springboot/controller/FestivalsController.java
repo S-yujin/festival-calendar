@@ -203,74 +203,118 @@ public class FestivalsController {
             return FestivalStatus.PAST;      // 이미 종료
         }
     }
-
+    
     // 캘린더
- // 캘린더
     @GetMapping("/calendar")
     public String calendar(
-            @RequestParam(name = "year",  required = false) Integer yearParam,
+            @RequestParam(name = "year", required = false) Integer yearParam,
             @RequestParam(name = "month", required = false) Integer monthParam,
-            @RequestParam(name = "day",   required = false) Integer dayParam,  // ✅ 추가
-            Model model) {
+            @RequestParam(name = "day", required = false) Integer dayParam,
+            Model model
+    ) {
 
+        // 1) 기준 YearMonth 계산 (연/월 파라미터 없으면 오늘 기준)
         LocalDate today = LocalDate.now();
+        int baseYear = (yearParam != null) ? yearParam : today.getYear();
+        int baseMonth = (monthParam != null) ? monthParam : today.getMonthValue();
 
-        int year  = (yearParam  != null) ? yearParam  : today.getYear();
-        int month = (monthParam != null) ? monthParam : today.getMonthValue();
-
-        // 달 범위
-        LocalDate calendarStart = LocalDate.of(year, month, 1);
-        LocalDate calendarEnd   = calendarStart.withDayOfMonth(calendarStart.lengthOfMonth());
-
-        // 선택된 날짜 (없으면: 이번 달이면 오늘, 아니면 1일)
-        int selectedDay;
-        if (dayParam != null) {
-            selectedDay = dayParam;
-        } else if (year == today.getYear() && month == today.getMonthValue()) {
-            selectedDay = today.getDayOfMonth();
-        } else {
-            selectedDay = 1;
+        // YearMonth.of 에서 0월/13월 같은 값 들어오면 예외이므로 방어코드
+        YearMonth yearMonth;
+        try {
+            yearMonth = YearMonth.of(baseYear, baseMonth);
+        } catch (Exception e) {
+            yearMonth = YearMonth.from(today); // 이상한 값 들어오면 그냥 이번 달로
         }
-        LocalDate selectedDate = LocalDate.of(year, month, selectedDay);
 
-        // 이 달과 '기간이 겹치는' 축제들 조회
-        //    (repo 에 아래 메소드 하나 만들어주는 게 베스트)
-        //    List<Festivals> findByFstvlBeginDeLessThanEqualAndFstvlEndDeGreaterThanEqual(
-        //            LocalDate end, LocalDate start);
-        List<Festivals> list =
+        LocalDate monthStart = yearMonth.atDay(1);           // 해당 달의 1일
+        LocalDate monthEnd = yearMonth.atEndOfMonth();       // 해당 달의 마지막 날
+
+        // 2) 이전/다음 달 계산 (연도 넘어가는 부분도 자동 처리)
+        YearMonth prevMonth = yearMonth.minusMonths(1);
+        YearMonth nextMonth = yearMonth.plusMonths(1);
+
+        // 3) 이 달과 "기간이 겹치는" 축제 전체 조회
+        //    (시작일 <= monthEnd) AND (종료일 >= monthStart)
+        List<Festivals> monthFestivals =
                 repository.findByFstvlBeginDeLessThanEqualAndFstvlEndDeGreaterThanEqual(
-                        calendarEnd, calendarStart);
+                        monthEnd, monthStart
+                );
 
-        // 날짜별로 축제 묶기 (여러 날 열리는 축제는 날짜마다 넣기)
-        Map<LocalDate, List<Festivals>> dailyMap = new HashMap<>();
+        // 4) 각 축제를 "진행 중인 날짜들"에 모두 매핑 (달력용 Map<날짜, 축제 리스트>)
+        Map<LocalDate, List<Festivals>> festivalMap = new HashMap<>();
 
-        for (Festivals f : list) {
-            LocalDate s = f.getFstvlBeginDe();
-            LocalDate e = f.getFstvlEndDe();
-            if (s == null || e == null) continue;
+        for (Festivals f : monthFestivals) {
+            LocalDate begin = f.getFstvlBeginDe();
+            LocalDate end = f.getFstvlEndDe();
 
-            LocalDate from = s.isBefore(calendarStart) ? calendarStart : s;
-            LocalDate to   = e.isAfter(calendarEnd)   ? calendarEnd   : e;
+            if (begin == null || end == null) {
+                continue; // 날짜 없으면 스킵
+            }
 
-            for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
-                dailyMap.computeIfAbsent(d, k -> new ArrayList<>()).add(f);
+            // 이 달 안에서 실제로 겹치는 구간만 잘라내기
+            LocalDate effectiveStart = begin.isBefore(monthStart) ? monthStart : begin;
+            LocalDate effectiveEnd = end.isAfter(monthEnd) ? monthEnd : end;
+
+            for (LocalDate d = effectiveStart; !d.isAfter(effectiveEnd); d = d.plusDays(1)) {
+                festivalMap
+                        .computeIfAbsent(d, k -> new ArrayList<>())
+                        .add(f);
             }
         }
 
-        // 화면 아래에 보여줄 "선택 날짜의 축제들"
+        // 5) 날짜별 축제 리스트 정렬 (시작일, 이름 기준 등으로)
+        for (Map.Entry<LocalDate, List<Festivals>> entry : festivalMap.entrySet()) {
+            List<Festivals> list = entry.getValue();
+            list.sort(Comparator
+                    .comparing(Festivals::getFstvlBeginDe, Comparator.nullsLast(LocalDate::compareTo))
+                    .thenComparing(Festivals::getFcltyNm, Comparator.nullsLast(String::compareTo))
+            );
+        }
+
+        // 6) 선택된 날짜(selectedDate) 계산
+        LocalDate selectedDate;
+        if (dayParam != null) {
+            // day 파라미터가 있으면 해당 날로 고정 (범위 넘어간 값이면 1일로)
+            try {
+                selectedDate = LocalDate.of(yearMonth.getYear(), yearMonth.getMonthValue(), dayParam);
+            } catch (Exception e) {
+                selectedDate = monthStart;
+            }
+        } else {
+            // day 없으면
+            // - 현재 달이면 today
+            // - 아니면 그 달의 1일
+            if (today.getYear() == yearMonth.getYear()
+                    && today.getMonthValue() == yearMonth.getMonthValue()) {
+                selectedDate = today;
+            } else {
+                selectedDate = monthStart;
+            }
+        }
+
+        // 7) 선택된 날짜에 "진행 중인 축제" 리스트
         List<Festivals> dailyFestivals =
-                dailyMap.getOrDefault(selectedDate, Collections.emptyList());
+                festivalMap.getOrDefault(selectedDate, Collections.emptyList());
 
-        model.addAttribute("calendarStart", calendarStart);
-        model.addAttribute("calendarEnd",   calendarEnd);
-        model.addAttribute("festivalMap",   dailyMap);       // 날짜 칸에 표시할 용도
-        model.addAttribute("year",          year);
-        model.addAttribute("month",         month);
-        model.addAttribute("selectedDate",  selectedDate);   // 선택된 날짜
-        model.addAttribute("dailyFestivals", dailyFestivals);// 그 날 축제 목록
+        // 8) 뷰로 넘길 모델 값들
+        model.addAttribute("calendarStart", monthStart);
+        model.addAttribute("calendarEnd", monthEnd);
+        model.addAttribute("festivalMap", festivalMap);
 
-        return "calendar";
+        model.addAttribute("year", yearMonth.getYear());
+        model.addAttribute("month", yearMonth.getMonthValue());
+
+        model.addAttribute("prevYear", prevMonth.getYear());
+        model.addAttribute("prevMonth", prevMonth.getMonthValue());
+        model.addAttribute("nextYear", nextMonth.getYear());
+        model.addAttribute("nextMonth", nextMonth.getMonthValue());
+
+        model.addAttribute("selectedDate", selectedDate);
+        model.addAttribute("dailyFestivals", dailyFestivals);
+
+        return "calendar"; // templates/calendar.html
     }
+
 
     // 상세 페이지 + 리뷰 목록
     @GetMapping("/{id}")

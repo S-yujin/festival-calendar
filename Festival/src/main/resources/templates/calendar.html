@@ -32,14 +32,20 @@
 
         <div class="calendar-controls">
             <!-- 이전/다음 달 이동 -->
-            <div class="calendar-nav">
-                <a class="cal-nav-btn"
-                   th:href="@{/festivals/calendar(year=${year}, month=${month-1})}">‹ 이전 달</a>
-                <span class="cal-current"
-                      th:text="|${year}.${month}|">2025.1</span>
-                <a class="cal-nav-btn"
-                   th:href="@{/festivals/calendar(year=${year}, month=${month+1})}">다음 달 ›</a>
-            </div>
+			<div class="calendar-nav">
+			    <a class="cal-nav-btn"
+			       th:href="@{/festivals/calendar(year=${prevYear}, month=${prevMonth})}">
+			        ‹ 이전 달
+			    </a>
+			    <span class="cal-current"
+			          th:text="${year} + '.' + ${month}">
+			        2025.12
+			    </span>
+			    <a class="cal-nav-btn"
+			       th:href="@{/festivals/calendar(year=${nextYear}, month=${nextMonth})}">
+			        다음 달 ›
+			    </a>
+			</div>
 
             <!-- 연/월 직접 선택 -->
             <form th:action="@{/festivals/calendar}" method="get" class="cal-form">
@@ -72,44 +78,46 @@
             </tr>
             </thead>
 
-            <tbody class="calendar-body"
-                   th:with="start=${calendarStart},
-                            end=${calendarEnd},
-                            lastDay=${end.dayOfMonth},
-                            firstDow=${(#temporals.dayOfWeek(start) % 7) + 1}">
-            <!-- 6주(최대) 고정 루프 -->
-            <tr th:each="week : ${#numbers.sequence(0,5)}">
-                <td th:each="dow : ${#numbers.sequence(1,7)}"
-                    th:with="
-                        day=${week * 7 + dow - firstDow + 1},
-                        valid=${day >= 1 and day <= lastDay},
-                        dayDate=${valid} ? ${start.withDayOfMonth(day)} : null,
-                        dayFestivals=${valid} ? ${festivalMap[dayDate]} : null">
+			<tbody class="calendar-body"
+			       th:with="start=${calendarStart},
+			                end=${calendarEnd},
+			                lastDay=${end.dayOfMonth},
+			                firstDow=${(#temporals.dayOfWeek(start) % 7) + 1}">
 
-                    <!-- 유효한 날짜만 표시 -->
-                    <div th:if="${valid}">
-                        <!-- 날짜 클릭하면 day 파라미터로 다시 조회 -->
-                        <a th:href="@{'/festivals/calendar'(year=${year}, month=${month}, day=${day})}"
-                           th:class="${dayDate} == ${selectedDate} ? 'cal-cell day-link selected' : 'cal-cell day-link'">
-                            <div class="cal-day-num" th:text="${day}">1</div>
+			    <!-- 6주(최대) 고정 루프 -->
+			    <tr th:each="week : ${#numbers.sequence(0,5)}">
+			        <td th:each="dow : ${#numbers.sequence(1,7)}"
+			            th:with="day=${week * 7 + dow - firstDow + 1},
+			                     valid=${day >= 1 and day <= lastDay}">
+			            
+			            <!-- 유효한 날짜만 표시 -->
+			            <div th:if="${valid}"
+			                 th:with="dayDate=${start.withDayOfMonth(day)},
+			                          dayFestivals=${festivalMap[dayDate]}">
 
-                            <!-- 해당 날짜 축제 (최대 2개 보여주고, 나머지는 '외 n개') -->
-                            <ul class="cal-day-festivals"
-                                th:if="${dayFestivals != null}"
-                                th:with="cnt=${#lists.size(dayFestivals)}">
-                                <li th:each="f, st : ${dayFestivals}"
-                                    th:if="${st.index} &lt; 2">
-                                    <span th:text="${f.fcltyNm}">축제명</span>
-                                </li>
-                                <li class="cal-more" th:if="${cnt > 2}">
-                                    외 <span th:text="${cnt - 2}">0</span>개
-                                </li>
-                            </ul>
-                        </a>
-                    </div>
-                </td>
-            </tr>
-            </tbody>
+			                <!-- 날짜 클릭하면 day 파라미터로 다시 조회 -->
+			                <a th:href="@{'/festivals/calendar'(year=${year}, month=${month}, day=${day})}"
+			                   th:class="${dayDate} == ${selectedDate} ? 'cal-cell day-link selected' : 'cal-cell day-link'">
+
+			                    <div class="cal-day-num" th:text="${day}">1</div>
+
+			                    <!-- 해당 날짜 축제 (최대 2개 + '외 n개') -->
+			                    <ul class="cal-day-festivals"
+			                        th:if="${dayFestivals != null}"
+			                        th:with="cnt=${#lists.size(dayFestivals)}">
+			                        <li th:each="f, st : ${dayFestivals}"
+			                            th:if="${st.index} &lt; 2">
+			                            <span th:text="${f.fcltyNm}">축제명</span>
+			                        </li>
+			                        <li class="cal-more" th:if="${cnt > 2}">
+			                            외 <span th:text="${cnt - 2}">0</span>개
+			                        </li>
+			                    </ul>
+			                </a>
+			            </div>
+			        </td>
+			    </tr>
+			</tbody>
         </table>
     </section>
 
