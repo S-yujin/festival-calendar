@@ -28,7 +28,10 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -202,30 +205,71 @@ public class FestivalsController {
     }
 
     // 캘린더
+ // 캘린더
     @GetMapping("/calendar")
     public String calendar(
-            @RequestParam(name = "year", required = false) Integer yearParam,
+            @RequestParam(name = "year",  required = false) Integer yearParam,
             @RequestParam(name = "month", required = false) Integer monthParam,
+            @RequestParam(name = "day",   required = false) Integer dayParam,  // ✅ 추가
             Model model) {
 
-        int year = (yearParam != null) ? yearParam : LocalDate.now().getYear();
-        int month = (monthParam != null) ? monthParam : LocalDate.now().getMonthValue();
+        LocalDate today = LocalDate.now();
 
-        LocalDate start = LocalDate.of(year, month, 1);
-        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+        int year  = (yearParam  != null) ? yearParam  : today.getYear();
+        int month = (monthParam != null) ? monthParam : today.getMonthValue();
 
-        List<Festivals> list = repository.findByFstvlBeginDeBetween(start, end);
+        // 달 범위
+        LocalDate calendarStart = LocalDate.of(year, month, 1);
+        LocalDate calendarEnd   = calendarStart.withDayOfMonth(calendarStart.lengthOfMonth());
 
-        Map<LocalDate, List<Festivals>> byDate = list.stream()
-                .collect(Collectors.groupingBy(Festivals::getFstvlBeginDe));
+        // 선택된 날짜 (없으면: 이번 달이면 오늘, 아니면 1일)
+        int selectedDay;
+        if (dayParam != null) {
+            selectedDay = dayParam;
+        } else if (year == today.getYear() && month == today.getMonthValue()) {
+            selectedDay = today.getDayOfMonth();
+        } else {
+            selectedDay = 1;
+        }
+        LocalDate selectedDate = LocalDate.of(year, month, selectedDay);
 
-        model.addAttribute("calendarStart", start);
-        model.addAttribute("calendarEnd", end);
-        model.addAttribute("festivalMap", byDate);
-        model.addAttribute("year", year);
-        model.addAttribute("month", month);
+        // 이 달과 '기간이 겹치는' 축제들 조회
+        //    (repo 에 아래 메소드 하나 만들어주는 게 베스트)
+        //    List<Festivals> findByFstvlBeginDeLessThanEqualAndFstvlEndDeGreaterThanEqual(
+        //            LocalDate end, LocalDate start);
+        List<Festivals> list =
+                repository.findByFstvlBeginDeLessThanEqualAndFstvlEndDeGreaterThanEqual(
+                        calendarEnd, calendarStart);
 
-        return "calendar";   // calendar.html
+        // 날짜별로 축제 묶기 (여러 날 열리는 축제는 날짜마다 넣기)
+        Map<LocalDate, List<Festivals>> dailyMap = new HashMap<>();
+
+        for (Festivals f : list) {
+            LocalDate s = f.getFstvlBeginDe();
+            LocalDate e = f.getFstvlEndDe();
+            if (s == null || e == null) continue;
+
+            LocalDate from = s.isBefore(calendarStart) ? calendarStart : s;
+            LocalDate to   = e.isAfter(calendarEnd)   ? calendarEnd   : e;
+
+            for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
+                dailyMap.computeIfAbsent(d, k -> new ArrayList<>()).add(f);
+            }
+        }
+
+        // 화면 아래에 보여줄 "선택 날짜의 축제들"
+        List<Festivals> dailyFestivals =
+                dailyMap.getOrDefault(selectedDate, Collections.emptyList());
+
+        model.addAttribute("calendarStart", calendarStart);
+        model.addAttribute("calendarEnd",   calendarEnd);
+        model.addAttribute("festivalMap",   dailyMap);       // 날짜 칸에 표시할 용도
+        model.addAttribute("year",          year);
+        model.addAttribute("month",         month);
+        model.addAttribute("selectedDate",  selectedDate);   // 선택된 날짜
+        model.addAttribute("dailyFestivals", dailyFestivals);// 그 날 축제 목록
+
+        return "calendar";
     }
 
     // 상세 페이지 + 리뷰 목록
