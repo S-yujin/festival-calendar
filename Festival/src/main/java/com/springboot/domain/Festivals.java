@@ -83,8 +83,18 @@ public class Festivals {
 
     // TourAPI에서 채우는 주소
     private String addr1;
+    // 축제명
+    private String fstvlNm; 
 
     // 위도 / 경도 (문자열로 저장)
     private String mapY;  // 위도
     private String mapX;  // 경도
+    
+    // TourAPI contentId 저장용
+    @Column(name = "tourapi_content_id")
+    private String tourapiContentId;
+    
+    @Column(name = "detail_loaded")
+    // TourAPI 상세 정보까지 채웠는지 여부
+    private Boolean detailLoaded = false;
 }
