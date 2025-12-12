@@ -34,18 +34,36 @@
             <!-- 이전/다음 달 이동 -->
             <div class="calendar-nav">
                 <a class="cal-nav-btn"
-                   th:href="@{/festivals/calendar(year=${prevYear}, month=${prevMonth})}">
+                   th:href="@{/festivals/calendar(year=${prevYear}, month=${prevMonth}, mode=${mode})}">
                     ‹ 이전 달
                 </a>
                 <span class="cal-current" th:text="${year} + '.' + ${month}">2025.12</span>
                 <a class="cal-nav-btn"
-                   th:href="@{/festivals/calendar(year=${nextYear}, month=${nextMonth})}">
+                   th:href="@{/festivals/calendar(year=${nextYear}, month=${nextMonth}, mode=${mode})}">
                     다음 달 ›
                 </a>
             </div>
 
+            <!-- ✅ 모드 토글 -->
+            <div class="cal-mode">
+                <a class="mode-btn"
+                   th:classappend="${mode=='real' ? ' active' : ''}"
+                   th:href="@{/festivals/calendar(year=${year}, month=${month}, mode='real')}">실제</a>
+
+                <a class="mode-btn"
+                   th:classappend="${mode=='expected' ? ' active' : ''}"
+                   th:href="@{/festivals/calendar(year=${year}, month=${month}, mode='expected')}">예상</a>
+
+                <a class="mode-btn"
+                   th:classappend="${mode=='all' ? ' active' : ''}"
+                   th:href="@{/festivals/calendar(year=${year}, month=${month}, mode='all')}">둘다</a>
+            </div>
+
             <!-- 연/월 직접 선택 -->
             <form th:action="@{/festivals/calendar}" method="get" class="cal-form">
+                <!-- ✅ mode 유지 -->
+                <input type="hidden" name="mode" th:value="${mode}">
+
                 <label>
                     연도
                     <input type="number" name="year" th:value="${year}" style="width:80px;">
@@ -84,7 +102,8 @@
                          th:with="dayDate=${start.withDayOfMonth(day)},
                                   dayFestivals=${festivalMap[dayDate]}">
 
-                        <a th:href="@{'/festivals/calendar'(year=${year}, month=${month}, day=${day})}"
+                        <!-- ✅ 날짜 클릭 시 mode 유지 -->
+                        <a th:href="@{'/festivals/calendar'(year=${year}, month=${month}, day=${day}, mode=${mode})}"
                            th:class="${dayDate} == ${selectedDate} ? 'cal-cell day-link selected' : 'cal-cell day-link'">
 
                             <div class="cal-day-num" th:text="${day}">1</div>

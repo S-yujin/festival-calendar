@@ -456,4 +456,25 @@
         display:block;
         text-decoration:none;
         color:inherit;
-    }
+}
+.cal-mode{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+
+.mode-btn{
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  color:#333;
+  text-decoration:none;
+  font-size:13px;
+}
+
+.mode-btn.active{
+  background:#6c2bd9;
+  border-color:#6c2bd9;
+  color:#fff;
+}
