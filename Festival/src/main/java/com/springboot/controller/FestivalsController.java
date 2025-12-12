@@ -32,8 +32,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,7 +48,7 @@ public class FestivalsController {
     private final FestivalReviewRepository reviewRepository;
     private final MemberService memberService;
     private final FileStorageService fileStorageService;
-
+    
     public FestivalsController(FestivalsRepository repository,
                                FestivalPatternService patternService,
                                FestivalReviewRepository reviewRepository,
@@ -86,7 +88,7 @@ public class FestivalsController {
 
     // 리스트 기반 검색 화면
     @GetMapping("/list")
-    public String listCurrentYear(
+    public String list(
             @RequestParam(name = "region",     required = false) String region,
             @RequestParam(name = "startDate",  required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -94,40 +96,57 @@ public class FestivalsController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(name = "category",   required = false) String category,
             @RequestParam(name = "congestion", required = false) String congestion,
+            // ★ 달력/화면에서 보고 싶은 연도(올해/내년)를 넘길 때 사용
+            @RequestParam(name = "viewYear",   required = false) Integer viewYear,
             Model model) {
 
         LocalDate today = LocalDate.now();
-        int year = today.getYear();
+        int currentYear = today.getYear();
 
-        // 1) 해당 연도 전체 축제
-        List<Festivals> all = repository.findByYear(year);
-        Stream<Festivals> stream = all.stream();
+        // ===== 1) 이번 화면에서 기준이 되는 연도 결정 =====
+        int year;
 
-        // 2) 날짜 필터
-        if (startDate != null) {
-            stream = stream.filter(f -> {
-                LocalDate end = f.getFstvlEndDe();
-                if (end == null) return false;
-                return !end.isBefore(startDate);   // end >= startDate
-            });
+        if (viewYear != null) {
+            year = viewYear;                       // 달력에서 연도 넘겨 준 경우 (예: 2026)
+        } else if (startDate != null) {
+            year = startDate.getYear();            // 시작일로 추정
+        } else if (endDate != null) {
+            year = endDate.getYear();              // 종료일로 추정
+        } else {
+            year = currentYear;                    // 아무 정보 없으면 올해
         }
 
-        if (endDate != null) {
-            stream = stream.filter(f -> {
-                LocalDate begin = f.getFstvlBeginDe();
-                if (begin == null) return false;
-                return !begin.isAfter(endDate);    // begin <= endDate
-            });
+     // ===== 2) 날짜 범위 확정 (없으면 해당 year 전체) =====
+        LocalDate rangeStart = (startDate != null) ? startDate : LocalDate.of(year, 1, 1);
+        LocalDate rangeEnd   = (endDate   != null) ? endDate   : LocalDate.of(year, 12, 31);
+
+        // ===== 3) DB 축제 가져오기 (레포 기준) =====
+        // 레포에 있는 건 "region + 기간겹침" 메서드만 확실히 보임.
+        // region 없으면 일단 findAll() 후 기간 겹침으로 걸러서 맞춤(컴파일 보장).
+        List<Festivals> base;
+        if (region != null && !region.isBlank()) {
+            // fstvlBeginDe <= rangeEnd AND fstvlEndDe >= rangeStart  (기간 겹침)
+            base = repository.findByCtprvnNmAndFstvlBeginDeLessThanEqualAndFstvlEndDeGreaterThanEqual(
+                    region, rangeEnd, rangeStart
+            );
+        } else {
+            base = repository.findAll().stream()
+                    .filter(f -> f.getFstvlBeginDe() != null && f.getFstvlEndDe() != null)
+                    .filter(f -> !f.getFstvlBeginDe().isAfter(rangeEnd))   // begin <= rangeEnd
+                    .filter(f -> !f.getFstvlEndDe().isBefore(rangeStart))  // end   >= rangeStart
+                    .collect(Collectors.toList());
         }
 
-        // 3) 지역 / 유형 / 혼잡도 필터 (지금은 간단히 내용/이름에 포함 여부로 체크)
-        stream = applyContainsFilter(stream, region);
+        // ===== 4) 추가 필터 (카테고리/혼잡도 등) =====
+        Stream<Festivals> stream = base.stream();
+
+        // region은 위에서 이미 처리했으니 여기서는 안 걸어도 됨
         stream = applyContainsFilter(stream, category);
         stream = applyContainsFilter(stream, congestion);
 
         List<Festivals> list = stream.collect(Collectors.toList());
 
-        // 4) 진행 중 → 예정 → 지난 순으로 정렬
+        // ===== 6) 진행 중 → 예정 → 지난 순 정렬 (예상 포함해서 그대로 사용) =====
         list.sort(
                 Comparator.comparing((Festivals f) -> {
                     FestivalStatus status = calculateStatus(f, today);
@@ -136,14 +155,14 @@ public class FestivalsController {
                         case UPCOMING -> 1;
                         case PAST     -> 2;
                     };
-                }).thenComparing(Festivals::getFstvlBeginDe, 
+                }).thenComparing(Festivals::getFstvlBeginDe,
                         Comparator.nullsLast(Comparator.naturalOrder()))
         );
 
-        // 5) 지역 선택 옵션 (임시)
+        // ===== 7) 지역 선택 옵션 (임시) =====
         List<String> regions = List.of("서울", "부산", "울산", "경남", "기타");
 
-        // 6) 지도용 마커 데이터 (status 포함)
+        // ===== 8) 지도용 마커 데이터 (status 포함) =====
         List<FestivalMarker> markers = list.stream()
                 .filter(f -> f.getFcltyLa() != null && f.getFcltyLo() != null)
                 .map(f -> {
@@ -158,10 +177,10 @@ public class FestivalsController {
                 })
                 .collect(Collectors.toList());
 
-        // 7) 모델에 담기
+        // ===== 9) 모델에 담기 =====
         model.addAttribute("today", today);
         model.addAttribute("festivals", list);
-        model.addAttribute("year", year);
+        model.addAttribute("year", year);        // ★ 현재 화면 연도
         model.addAttribute("markers", markers);
 
         // 폼 값 유지
@@ -172,8 +191,13 @@ public class FestivalsController {
         model.addAttribute("congestion", congestion);
         model.addAttribute("regions", regions);
 
+        // 내년 예측 여부를 뷰에서 쉽게 알 수 있게 플래그도 하나 던져줌
+        model.addAttribute("isFutureYear", year > currentYear);
+
         return "list";  // list.html
     }
+
+
 
     // 내용에 검색어가 포함되는지 간단히 체크하는 헬퍼
     private Stream<Festivals> applyContainsFilter(Stream<Festivals> stream, String keyword) {
@@ -239,6 +263,21 @@ public class FestivalsController {
                 repository.findByFstvlBeginDeLessThanEqualAndFstvlEndDeGreaterThanEqual(
                         monthEnd, monthStart
                 );
+        // 3.5) 미래 연도면 예상 축제 합치기 (예상은 캘린더에서만)
+        int baseDbYear = 2025;
+        if (yearMonth.getYear() > baseDbYear) {
+            List<Festivals> expected = patternService.buildExpectedFestivalsForRange(monthStart, monthEnd);
+
+            // (선택) 중복 제거: 이름+시작일 기준
+            Set<String> seen = new HashSet<>();
+            for (Festivals f : monthFestivals) {
+                seen.add((f.getFcltyNm() + "|" + f.getFstvlBeginDe()));
+            }
+            for (Festivals f : expected) {
+                String key = (f.getFcltyNm() + "|" + f.getFstvlBeginDe());
+                if (seen.add(key)) monthFestivals.add(f);
+            }
+        }
 
         // 4) 각 축제를 "진행 중인 날짜들"에 모두 매핑 (달력용 Map<날짜, 축제 리스트>)
         Map<LocalDate, List<Festivals>> festivalMap = new HashMap<>();
@@ -312,7 +351,7 @@ public class FestivalsController {
         model.addAttribute("selectedDate", selectedDate);
         model.addAttribute("dailyFestivals", dailyFestivals);
 
-        return "calendar"; // templates/calendar.html
+        return "calendar";
     }
 
 

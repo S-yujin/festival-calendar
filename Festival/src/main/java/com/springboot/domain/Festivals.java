@@ -8,13 +8,13 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-@NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA용 기본 생성자 자동 생성
+@NoArgsConstructor(access = AccessLevel.PUBLIC) // JPA용 기본 생성자 자동 생성
 @AllArgsConstructor                              // 모든 필드 받는 생성자
 @Entity
 @Data
 @Table(name = "festival")
 public class Festivals {
-
+	
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;       // AUTO_INCREMENT PK

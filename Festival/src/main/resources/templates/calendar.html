@@ -28,24 +28,29 @@
                 한눈에 보는 월별 축제 일정입니다. 날짜별로 열리는 축제를 확인해 보세요.<br>
                 아래 캘린더에서 날짜를 선택하면, 아래 리스트에서 해당 날짜의 축제를 볼 수 있습니다.
             </p>
+
+            <!-- (선택) 미래연도일 때 안내문 -->
+            <p th:if="${year > 2025}" style="margin-top:8px; font-size:13px; color:#8a5a00;">
+                ※ 2026년 이후 달력에는 ‘개최 예상’ 일정이 함께 표시될 수 있어요.
+            </p>
         </div>
 
         <div class="calendar-controls">
             <!-- 이전/다음 달 이동 -->
-			<div class="calendar-nav">
-			    <a class="cal-nav-btn"
-			       th:href="@{/festivals/calendar(year=${prevYear}, month=${prevMonth})}">
-			        ‹ 이전 달
-			    </a>
-			    <span class="cal-current"
-			          th:text="${year} + '.' + ${month}">
-			        2025.12
-			    </span>
-			    <a class="cal-nav-btn"
-			       th:href="@{/festivals/calendar(year=${nextYear}, month=${nextMonth})}">
-			        다음 달 ›
-			    </a>
-			</div>
+            <div class="calendar-nav">
+                <a class="cal-nav-btn"
+                   th:href="@{/festivals/calendar(year=${prevYear}, month=${prevMonth})}">
+                    ‹ 이전 달
+                </a>
+                <span class="cal-current"
+                      th:text="${year} + '.' + ${month}">
+                    2025.12
+                </span>
+                <a class="cal-nav-btn"
+                   th:href="@{/festivals/calendar(year=${nextYear}, month=${nextMonth})}">
+                    다음 달 ›
+                </a>
+            </div>
 
             <!-- 연/월 직접 선택 -->
             <form th:action="@{/festivals/calendar}" method="get" class="cal-form">
@@ -78,108 +83,148 @@
             </tr>
             </thead>
 
-			<tbody class="calendar-body"
-			       th:with="start=${calendarStart},
-			                end=${calendarEnd},
-			                lastDay=${end.dayOfMonth},
-			                firstDow=${(#temporals.dayOfWeek(start) % 7) + 1}">
+            <tbody class="calendar-body"
+                   th:with="start=${calendarStart},
+                            end=${calendarEnd},
+                            lastDay=${end.dayOfMonth},
+                            firstDow=${(#temporals.dayOfWeek(start) % 7) + 1}">
 
-			    <!-- 6주(최대) 고정 루프 -->
-			    <tr th:each="week : ${#numbers.sequence(0,5)}">
-			        <td th:each="dow : ${#numbers.sequence(1,7)}"
-			            th:with="day=${week * 7 + dow - firstDow + 1},
-			                     valid=${day >= 1 and day <= lastDay}">
-			            
-			            <!-- 유효한 날짜만 표시 -->
-			            <div th:if="${valid}"
-			                 th:with="dayDate=${start.withDayOfMonth(day)},
-			                          dayFestivals=${festivalMap[dayDate]}">
+            <!-- 6주(최대) 고정 루프 -->
+            <tr th:each="week : ${#numbers.sequence(0,5)}">
+                <td th:each="dow : ${#numbers.sequence(1,7)}"
+                    th:with="day=${week * 7 + dow - firstDow + 1},
+                             valid=${day >= 1 and day <= lastDay}">
 
-			                <!-- 날짜 클릭하면 day 파라미터로 다시 조회 -->
-			                <a th:href="@{'/festivals/calendar'(year=${year}, month=${month}, day=${day})}"
-			                   th:class="${dayDate} == ${selectedDate} ? 'cal-cell day-link selected' : 'cal-cell day-link'">
+                    <!-- 유효한 날짜만 표시 -->
+                    <div th:if="${valid}"
+                         th:with="dayDate=${start.withDayOfMonth(day)},
+                                  dayFestivals=${festivalMap[dayDate]}">
 
-			                    <div class="cal-day-num" th:text="${day}">1</div>
+                        <!-- 날짜 클릭하면 day 파라미터로 다시 조회 -->
+                        <a th:href="@{'/festivals/calendar'(year=${year}, month=${month}, day=${day})}"
+                           th:class="${dayDate} == ${selectedDate} ? 'cal-cell day-link selected' : 'cal-cell day-link'">
 
-			                    <!-- 해당 날짜 축제 (최대 2개 + '외 n개') -->
-			                    <ul class="cal-day-festivals"
-			                        th:if="${dayFestivals != null}"
-			                        th:with="cnt=${#lists.size(dayFestivals)}">
-			                        <li th:each="f, st : ${dayFestivals}"
-			                            th:if="${st.index} &lt; 2">
-			                            <span th:text="${f.fcltyNm}">축제명</span>
-			                        </li>
-			                        <li class="cal-more" th:if="${cnt > 2}">
-			                            외 <span th:text="${cnt - 2}">0</span>개
-			                        </li>
-			                    </ul>
-			                </a>
-			            </div>
-			        </td>
-			    </tr>
-			</tbody>
+                            <div class="cal-day-num" th:text="${day}">1</div>
+
+                            <!-- 해당 날짜 축제 (최대 2개 + '외 n개') -->
+                            <ul class="cal-day-festivals"
+                                th:if="${dayFestivals != null}"
+                                th:with="cnt=${#lists.size(dayFestivals)}">
+
+                                <li th:each="f, st : ${dayFestivals}"
+                                    th:if="${st.index} &lt; 2"
+                                    th:with="isExpected=${#strings.startsWith(f.fcltyNm,'[예상]')}">
+
+                                    <!-- ✅ 예상 배지 -->
+                                    <span th:if="${isExpected}" class="cal-badge cal-badge-expected">예상</span>
+
+                                    <!-- ✅ 표시용 이름(접두어 제거) -->
+                                    <span th:text="${#strings.replace(f.fcltyNm,'[예상] ','')}">축제명</span>
+                                </li>
+
+                                <li class="cal-more" th:if="${cnt > 2}">
+                                    외 <span th:text="${cnt - 2}">0</span>개
+                                </li>
+                            </ul>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
         </table>
     </section>
 
     <!-- 선택한 날짜의 축제 목록 -->
-	<section class="month-list-section">
-	    <h2>이달의 축제 목록</h2>
-	    <p class="subtitle">
-	        날짜를 선택하면, 해당 날짜에 진행 중인 축제만 볼 수 있어요.
-	    </p>
+    <section class="month-list-section">
+        <h2>이달의 축제 목록</h2>
+        <p class="subtitle">
+            날짜를 선택하면, 해당 날짜에 진행 중인 축제만 볼 수 있어요.
+        </p>
 
-	    <div class="month-list-body">
-	        <!-- 왼쪽: 날짜 정보 -->
-	        <div class="day-info">
-	            <div class="day-text"
-	                 th:text="${#temporals.format(selectedDate, 'MM.dd')}">12.11</div>
-	            <div class="day-dow"
-	                 th:text="${#temporals.format(selectedDate, '(E)')}">(목)</div>
-	        </div>
+        <div class="month-list-body">
+            <!-- 왼쪽: 날짜 정보 -->
+            <div class="day-info">
+                <div class="day-text"
+                     th:text="${#temporals.format(selectedDate, 'MM.dd')}">12.11</div>
+                <div class="day-dow"
+                     th:text="${#temporals.format(selectedDate, '(E)')}">(목)</div>
+            </div>
 
-	        <!-- 오른쪽: 카드 리스트 -->
-	        <div class="month-card-wrapper">
-	            <!-- 축제가 있을 때: 카드 그리드 -->
-	            <div class="month-card-grid"
-	                 th:if="${!#lists.isEmpty(dailyFestivals)}">
-	                <article class="month-festival-card"
-	                         th:each="f : ${dailyFestivals}">
-	                    <a th:href="@{/festivals/{id}(id=${f.id})}">
-	                        <h3 class="month-festival-title"
-	                            th:text="${f.fcltyNm}">
-	                            축제명
-	                        </h3>
-	                        <p class="month-festival-meta">
-	                            <span class="period"
-	                                  th:text="${#temporals.format(f.fstvlBeginDe,'MM.dd')}
-	                                           + ' ~ ' +
-	                                           ${#temporals.format(f.fstvlEndDe,'MM.dd')}">
-	                                11.30 ~ 01.09
-	                            </span>
-	                            <span class="dot">·</span>
-	                            <span class="loc"
-	                                  th:text="${f.ctprvnNm + ' ' + f.signguNm}">
-	                                경기 성남시
-	                            </span>
-	                        </p>
-	                    </a>
-	                </article>
-	            </div>
+            <!-- 오른쪽: 카드 리스트 -->
+            <div class="month-card-wrapper">
+                <!-- 축제가 있을 때: 카드 그리드 -->
+                <div class="month-card-grid"
+                     th:if="${!#lists.isEmpty(dailyFestivals)}">
 
-	            <!-- 축제가 없을 때 -->
-	            <p class="no-festival-text"
-	               th:if="${#lists.isEmpty(dailyFestivals)}">
-	                이 날에 진행 중인 축제가 없습니다.
-	            </p>
-	        </div>
-	    </div>
-	</section>
-	
+                    <article class="month-festival-card"
+                             th:each="f : ${dailyFestivals}"
+                             th:with="isExpected=${#strings.startsWith(f.fcltyNm,'[예상]')}">
+
+                        <!-- ✅ id 있을 때만 상세 링크 -->
+                        <a th:if="${f.id != null}"
+                           th:href="@{/festivals/{id}(id=${f.id})}">
+
+                            <div th:if="${isExpected}" class="expected-badge">개최 예상</div>
+
+                            <h3 class="month-festival-title"
+                                th:text="${#strings.replace(f.fcltyNm,'[예상] ','')}">
+                                축제명
+                            </h3>
+
+                            <p class="month-festival-meta">
+                                <span class="period"
+                                      th:text="${isExpected ? '개최 예상일: ' : ''} +
+                                               ${#temporals.format(f.fstvlBeginDe,'MM.dd')} + ' ~ ' +
+                                               ${#temporals.format(f.fstvlEndDe,'MM.dd')}">
+                                    11.30 ~ 01.09
+                                </span>
+                                <span class="dot">·</span>
+                                <span class="loc"
+                                      th:text="${f.ctprvnNm + ' ' + f.signguNm}">
+                                    경기 성남시
+                                </span>
+                            </p>
+                        </a>
+
+                        <!-- ✅ id 없으면 링크 없이 카드만 -->
+                        <div th:if="${f.id == null}" class="month-card-no-link">
+                            <div th:if="${isExpected}" class="expected-badge">개최 예상</div>
+
+                            <h3 class="month-festival-title"
+                                th:text="${#strings.replace(f.fcltyNm,'[예상] ','')}">
+                                축제명
+                            </h3>
+
+                            <p class="month-festival-meta">
+                                <span class="period"
+                                      th:text="${isExpected ? '개최 예상일: ' : ''} +
+                                               ${#temporals.format(f.fstvlBeginDe,'MM.dd')} + ' ~ ' +
+                                               ${#temporals.format(f.fstvlEndDe,'MM.dd')}">
+                                    11.30 ~ 01.09
+                                </span>
+                                <span class="dot">·</span>
+                                <span class="loc"
+                                      th:text="${f.ctprvnNm + ' ' + f.signguNm}">
+                                    경기 성남시
+                                </span>
+                            </p>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- 축제가 없을 때 -->
+                <p class="no-festival-text"
+                   th:if="${#lists.isEmpty(dailyFestivals)}">
+                    이 날에 진행 중인 축제가 없습니다.
+                </p>
+            </div>
+        </div>
+    </section>
+
     <div class="calendar-back-link">
         <a th:href="@{/festivals}">« 메인으로 돌아가기</a>
     </div>
 
 </main>
-
 </body>
 </html>

@@ -4,16 +4,17 @@
     <meta charset="UTF-8">
     <title>축제 목록 - 축제 한눈에 보기</title>
     <link rel="stylesheet" th:href="@{/css/list.css}">
-	<link rel="stylesheet" th:href="@{/css/header.css}">
+    <link rel="stylesheet" th:href="@{/css/header.css}">
 </head>
 <body>
 
-<!-- 공통 헤더 (여기서 .top-header 같은 거 쓰면 CSS가 붙음) -->
+<!-- 공통 헤더 -->
 <div th:replace="~{fragments/header :: header}"></div>
 
 <!-- 상단 필터 바 -->
 <div class="filter-bar">
-    <form th:action="@{/festivals/list}" method="get" style="display:flex; gap:8px; width:100%; align-items:center;">
+    <form th:action="@{/festivals/list}" method="get"
+          style="display:flex; gap:8px; width:100%; align-items:center;">
 
         <!-- 지역 -->
         <div>
@@ -23,7 +24,7 @@
                 <option th:each="r : ${regions}"
                         th:value="${r}"
                         th:text="${r}"
-                        th:selected="${r} == ${selectedRegion}">
+                        th:selected="${r} == ${region}">
                 </option>
             </select>
         </div>
@@ -40,13 +41,13 @@
 
         <!-- 유형 -->
         <div>
-            <label for="type" style="font-size:13px; color:#555;">유형</label>
-            <select id="type" name="type" class="filter-btn">
+            <label for="category" style="font-size:13px; color:#555;">유형</label>
+            <select id="category" name="category" class="filter-btn">
                 <option value="">전체</option>
-                <option value="음악" th:selected="${selectedType}=='음악'">음악/공연</option>
-                <option value="먹거리" th:selected="${selectedType}=='먹거리'">먹거리/야시장</option>
-                <option value="문화" th:selected="${selectedType}=='문화'">문화/전통</option>
-                <option value="꽃" th:selected="${selectedType}=='꽃'">꽃/자연</option>
+                <option value="음악" th:selected="${category}=='음악'">음악/공연</option>
+                <option value="먹거리" th:selected="${category}=='먹거리'">먹거리/야시장</option>
+                <option value="문화" th:selected="${category}=='문화'">문화/전통</option>
+                <option value="꽃" th:selected="${category}=='꽃'">꽃/자연</option>
             </select>
         </div>
 
@@ -55,13 +56,13 @@
             <label for="congestion" style="font-size:13px; color:#555;">혼잡도</label>
             <select id="congestion" name="congestion" class="filter-btn">
                 <option value="">전체</option>
-                <option value="여유" th:selected="${selectedCongestion}=='여유'">여유</option>
-                <option value="보통" th:selected="${selectedCongestion}=='보통'">보통</option>
-                <option value="혼잡" th:selected="${selectedCongestion}=='혼잡'">혼잡 예상</option>
+                <option value="여유" th:selected="${congestion}=='여유'">여유</option>
+                <option value="보통" th:selected="${congestion}=='보통'">보통</option>
+                <option value="혼잡" th:selected="${congestion}=='혼잡'">혼잡 예상</option>
             </select>
         </div>
 
-        <!-- 키워드 -->
+        <!-- 키워드 (컨트롤러에서 q 처리할 때만 의미 있음) -->
         <div style="flex:1;">
             <label for="keyword" style="font-size:13px; color:#555;">키워드</label>
             <input type="text" id="keyword" name="q"
@@ -70,7 +71,8 @@
 
         <!-- 검색/초기화 -->
         <div class="filter-right">
-            <button type="submit" class="filter-btn" style="background:#6c2bd9; color:#fff; border-color:#6c2bd9;">
+            <button type="submit" class="filter-btn"
+                    style="background:#6c2bd9; color:#fff; border-color:#6c2bd9;">
                 검색하기
             </button>
             <a th:href="@{/festivals/list}" class="sort-link">조건 초기화</a>
@@ -81,7 +83,7 @@
 <!-- 2컬럼 레이아웃: 왼쪽 리스트, 오른쪽 지도 -->
 <div class="page-2col">
 
-    <!-- 왼쪽: 리스트 패널 (스크롤 되는 영역) -->
+    <!-- 왼쪽: 리스트 패널 -->
     <main class="list-panel">
         <section>
             <h1 th:text="|${year}년 전국 축제 한눈에 보기|">
@@ -92,7 +94,7 @@
             </p>
         </section>
 
-        <!-- 결과 없을 때 문구 -->
+        <!-- 결과 없을 때 -->
         <p th:if="${#lists.isEmpty(festivals)}" style="margin-top:16px;">
             조건에 맞는 축제가 없습니다.
         </p>
@@ -102,6 +104,7 @@
             <div class="card-list">
                 <article class="festival-card" th:each="f : ${festivals}">
                     <a th:href="@{/festivals/{id}(id=${f.id})}">
+
                         <!-- 썸네일 -->
                         <div class="card-thumb">
                             <img th:if="${f.firstImageUrl != null}"
@@ -112,11 +115,15 @@
                         <!-- 텍스트 영역 -->
                         <div class="card-body">
                             <span class="status-badge">축제</span>
+
                             <h3 class="card-title" th:text="${f.fcltyNm}">축제명</h3>
+
                             <p class="card-period"
-                               th:text="${#temporals.format(f.fstvlBeginDe, 'MM.dd')} + ' ~ ' + ${#temporals.format(f.fstvlEndDe, 'MM.dd')}">
+                               th:text="${#temporals.format(f.fstvlBeginDe, 'MM.dd')} + ' ~ ' +
+                                        ${#temporals.format(f.fstvlEndDe, 'MM.dd')}">
                                 00.00 ~ 00.00
                             </p>
+
                             <p class="card-loc"
                                th:text="${f.ctprvnNm + ' ' + f.signguNm}">
                                 지역
@@ -128,20 +135,20 @@
         </section>
     </main>
 
-    <!-- 오른쪽: 지도 패널 (고정) -->
+    <!-- 오른쪽: 지도 패널 -->
     <aside class="map-panel">
         <div id="festivalMap"></div>
     </aside>
 </div>
 
 <!-- 네이버 지도 API -->
-<script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=imrp8lidfv"> </script>
+<script type="text/javascript"
+        src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=imrp8lidfv"></script>
 
 <!-- 네이버 지도 위에 마커 그리기 -->
 <script th:inline="javascript">
 /*<![CDATA[*/
     // 컨트롤러에서 넘겨준 markers 리스트
-    // 예: [{id:1, name:"광복로 겨울빛 트리축제", lat:35.1, lng:129.03}, ...]
     var markers = /*[[${markers}]]*/ [];
 
     // 기본 지도 생성 (대한민국 중앙쯤)
@@ -181,5 +188,6 @@
     }
 /*]]>*/
 </script>
+
 </body>
 </html>
