@@ -98,6 +98,7 @@ public class FestivalsController {
             @RequestParam(name = "congestion", required = false) String congestion,
             // ★ 달력/화면에서 보고 싶은 연도(올해/내년)를 넘길 때 사용
             @RequestParam(name = "viewYear",   required = false) Integer viewYear,
+            @RequestParam(name = "mapMode", required = false, defaultValue = "ongoing") String mapMode,
             Model model) {
 
         LocalDate today = LocalDate.now();
@@ -162,20 +163,26 @@ public class FestivalsController {
         // ===== 7) 지역 선택 옵션 (임시) =====
         List<String> regions = List.of("서울", "부산", "울산", "경남", "기타");
 
-        // ===== 8) 지도용 마커 데이터 (status 포함) =====
+        // ===== 8) 지도용 마커 데이터 (기본: 진행중만, 옵션: 전체) =====
+        boolean showAllOnMap = "all".equalsIgnoreCase(mapMode);
+
         List<FestivalMarker> markers = list.stream()
                 .filter(f -> f.getFcltyLa() != null && f.getFcltyLo() != null)
+                .filter(f -> showAllOnMap || calculateStatus(f, today) == FestivalStatus.ONGOING)
                 .map(f -> {
                     FestivalStatus status = calculateStatus(f, today);
                     return new FestivalMarker(
                             f.getId(),
                             f.getFcltyNm(),
-                            f.getFcltyLa(),  // 위도
-                            f.getFcltyLo(),  // 경도
-                            status.name()    // "ONGOING" 같은 문자열
+                            f.getFcltyLa(),
+                            f.getFcltyLo(),
+                            status.name()
                     );
                 })
                 .collect(Collectors.toList());
+
+        // 뷰에서 토글 상태 유지용
+        model.addAttribute("mapMode", mapMode);
 
         // ===== 9) 모델에 담기 =====
         model.addAttribute("today", today);

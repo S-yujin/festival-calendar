@@ -136,9 +136,28 @@
     </main>
 
     <!-- 오른쪽: 지도 패널 -->
-    <aside class="map-panel">
-        <div id="festivalMap"></div>
-    </aside>
+	<aside class="map-panel">
+	  <div class="map-toolbar">
+	    <a class="map-toggle"
+	       th:classappend="${mapMode == 'ongoing' ? ' active' : ''}"
+	       th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate}, category=${category}, congestion=${congestion}, mapMode='ongoing')}">
+	      진행중만
+	    </a>
+
+	    <a class="map-toggle"
+	       th:classappend="${mapMode == 'all' ? ' active' : ''}"
+	       th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate}, category=${category}, congestion=${congestion}, mapMode='all')}">
+	      전체
+	    </a>
+	  </div>
+
+	  <p th:if="${#lists.isEmpty(markers)}" class="map-empty">
+	    현재 지도에 표시할 축제가 없습니다.
+	  </p>
+
+	  <div id="festivalMap"></div>
+	</aside>
+
 </div>
 
 <!-- 네이버 지도 API -->
@@ -148,46 +167,55 @@
 <!-- 네이버 지도 위에 마커 그리기 -->
 <script th:inline="javascript">
 /*<![CDATA[*/
-    // 컨트롤러에서 넘겨준 markers 리스트
-    var markers = /*[[${markers}]]*/ [];
+  var markers = /*[[${markers}]]*/ [];
 
-    // 기본 지도 생성 (대한민국 중앙쯤)
-    var map = new naver.maps.Map('festivalMap', {
-        center: new naver.maps.LatLng(36.5, 127.5),
-        zoom: 7
+  var map = new naver.maps.Map('festivalMap', {
+    center: new naver.maps.LatLng(36.5, 127.5),
+    zoom: 7
+  });
+
+  if (markers.length > 0) {
+    var bounds = new naver.maps.LatLngBounds();
+
+    markers.forEach(function (m) {
+      var position = new naver.maps.LatLng(m.lat, m.lng);
+
+      // status: "ONGOING" | "UPCOMING" | "PAST"
+      var status = (m.status || "PAST");
+
+      var marker = new naver.maps.Marker({
+        position: position,
+        map: map,
+
+        // ✅ HTML 마커 아이콘 (상태별 class 적용)
+        icon: {
+          content: '<div class="nm-marker ' + status + '"></div>',
+          anchor: new naver.maps.Point(7, 7) // 14x14의 중앙
+        },
+
+        // ✅ 진행중이 위로 오게
+        zIndex: (status === "ONGOING" ? 200 : status === "UPCOMING" ? 150 : 100)
+      });
+
+      var info = new naver.maps.InfoWindow({
+        content:
+          '<div style="padding:6px 10px; font-size:12px;">' +
+            '<a href="/festivals/' + m.id + '" style="text-decoration:none;">' +
+              m.name +
+            '</a>' +
+          '</div>'
+      });
+
+      naver.maps.Event.addListener(marker, 'click', function () {
+        info.open(map, marker);
+      });
+
+      bounds.extend(position);
     });
 
-    if (markers.length > 0) {
-        var bounds = new naver.maps.LatLngBounds();
-
-        markers.forEach(function (m) {
-            var position = new naver.maps.LatLng(m.lat, m.lng);
-
-            var marker = new naver.maps.Marker({
-                position: position,
-                map: map
-            });
-
-            var info = new naver.maps.InfoWindow({
-                content:
-                    '<div style="padding:5px 10px; font-size:12px;">' +
-                        '<a href="/festivals/' + m.id + '">' +
-                            m.name +
-                        '</a>' +
-                    '</div>'
-            });
-
-            naver.maps.Event.addListener(marker, 'click', function () {
-                info.open(map, marker);
-            });
-
-            bounds.extend(position);
-        });
-
-        map.fitBounds(bounds);
-    }
+    map.fitBounds(bounds);
+  }
 /*]]>*/
 </script>
-
 </body>
 </html>
