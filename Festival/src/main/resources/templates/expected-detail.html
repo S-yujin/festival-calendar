@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>예상 개최 패턴</title>
+  <link rel="stylesheet" th:href="@{/css/base.css}">
+  <link rel="stylesheet" th:href="@{/css/header.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main style="max-width:920px; margin:24px auto; padding:0 16px;">
+  <h1 style="font-size:22px; margin-bottom:8px;"
+      th:text="|${targetYear}년 개최 예상: ${name}|">예상 상세</h1>
+
+  <section style="padding:14px 16px; border:1px solid #e5e7eb; border-radius:12px; margin-bottom:18px;">
+    <h2 style="font-size:16px; margin:0 0 8px 0;">예상 패턴</h2>
+
+    <div th:if="${pattern == null}" style="color:#666;">
+      아직 예측하기에 데이터가 부족합니다.
+    </div>
+
+    <div th:if="${pattern != null}">
+      <p style="margin:0; color:#333;"
+         th:text="|${pattern.month}월 ${pattern.weekOfMonth}주차 ${pattern.dayOfWeekKo}요일 전후|">
+        10월 4주차 토요일 전후
+      </p>
+      <p style="margin:6px 0 0; color:#666; font-size:13px;"
+         th:text="|근거 데이터: ${pattern.sampleCount}건 (동일/유사 축제명 이력)|">근거</p>
+    </div>
+  </section>
+
+  <section style="padding:14px 16px; border:1px solid #e5e7eb; border-radius:12px;">
+    <h2 style="font-size:16px; margin:0 0 10px 0;">과거 개최 이력</h2>
+
+    <div th:if="${#lists.isEmpty(history)}" style="color:#666;">
+      과거 이력이 없습니다.
+    </div>
+
+    <ul th:if="${!#lists.isEmpty(history)}" style="margin:0; padding-left:18px;">
+      <li th:each="h : ${history}">
+        <span th:text="${#temporals.format(h.fstvlBeginDe,'yyyy.MM.dd')}">2023.10.28</span>
+        ~
+        <span th:text="${#temporals.format(h.fstvlEndDe,'yyyy.MM.dd')}">2023.10.30</span>
+        <span style="color:#666;" th:text="|(${h.ctprvnNm} ${h.signguNm})|">(지역)</span>
+      </li>
+    </ul>
+  </section>
+
+  <div style="margin-top:18px;">
+    <a th:href="@{/festivals/calendar(year=${targetYear}, month=${pattern != null ? pattern.month : 1})}">
+      « 달력으로 돌아가기
+    </a>
+  </div>
+</main>
+
+</body>
+</html>

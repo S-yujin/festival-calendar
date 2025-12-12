@@ -413,7 +413,6 @@
         gap: 8px;
     }
 }
-
 .cal-badge{
         display:inline-block;
         font-size:11px;
@@ -439,6 +438,20 @@
         border:1px solid #ffd36a;
         margin-bottom:8px;
     }
+
+    .cal-dot{
+        display:inline-block;
+        width:6px; height:6px;
+        border-radius:999px;
+        margin-right:6px;
+        vertical-align:middle;
+        opacity:0.95;
+    }
+    .dot-music   { background:#6c2bd9; }
+    .dot-food    { background:#ff7a00; }
+    .dot-culture { background:#1f9d55; }
+    .dot-flower  { background:#ff4d8d; }
+    .dot-etc     { background:#7a7a7a; }
     .month-card-no-link{
         display:block;
         text-decoration:none;

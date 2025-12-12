@@ -353,6 +353,41 @@ public class FestivalsController {
 
         return "calendar";
     }
+    
+    // 예상 상세/패턴 설명
+    @GetMapping("/expected")
+    public String expectedDetail(
+            @RequestParam("name") String name,
+            @RequestParam(name = "year", required = false) Integer year,
+            Model model
+    ) {
+        int targetYear = (year != null) ? year : LocalDate.now().getYear() + 1;
+
+        // 패턴(월/주차/요일) 예측
+        var opt = patternService.predictNextYearByName(name);
+
+        // 이력(과거 데이터)
+        String baseName = normalizeName(name);
+        List<Festivals> history = repository.findByFcltyNmContainingOrderByFstvlBeginDeAsc(baseName);
+
+        model.addAttribute("name", name);
+        model.addAttribute("baseName", baseName);
+        model.addAttribute("targetYear", targetYear);
+        model.addAttribute("history", history);
+        model.addAttribute("pattern", opt.orElse(null));
+
+        return "expected-detail";
+    }
+
+    // 컨트롤러 안에 추가(서비스 normalizeName이 private라서 복붙)
+    private String normalizeName(String name) {
+        if (name == null) return "";
+        String n = name;
+        n = n.replaceAll("제\\d+회", "");
+        n = n.replaceAll("\\d{4}", "");
+        return n.trim();
+    }
+
 
 
     // 상세 페이지 + 리뷰 목록
