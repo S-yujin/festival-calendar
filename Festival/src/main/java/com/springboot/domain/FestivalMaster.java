@@ -50,6 +50,16 @@ public class FestivalMaster {
     @Column(name = "first_image_url", length = 500)
     private String firstImageUrl;
 
+    @Column(name = "first_image_url2", length = 500)
+    private String firstImageUrl2;  // 썸네일 이미지
+    
+    @Column(name = "original_image_url", length = 500)
+    private String originalImageUrl;  // 원본 고화질 이미지
+
+    @Lob
+    @Column(name = "image_urls")
+    private String imageUrls;  // JSON 배열: ["url1", "url2", ...]
+
     @Lob
     @Column(name = "overview")
     private String overview;
@@ -57,7 +67,6 @@ public class FestivalMaster {
     @Column(name = "tourapi_content_id")
     private Long tourApiContentId;
 
-    // FestivalSyncService에서 사용하는 필드 추가
     @Column(name = "detail_loaded")
     private Boolean detailLoaded = false;
 }

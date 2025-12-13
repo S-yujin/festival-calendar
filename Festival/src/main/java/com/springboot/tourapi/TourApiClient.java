@@ -179,4 +179,54 @@ public class TourApiClient {
 
         return builder.toUriString();
     }
+    
+    // detailImage1 API로 축제의 추가 이미지 목록 가져오기
+    public List<String> fetchDetailImages(String contentId) {
+        try {
+            String url = UriComponentsBuilder
+                    .fromUriString(baseUrl + "/detailImage1")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("contentId", contentId)
+                    .queryParam("MobileOS", MOBILE_OS)
+                    .queryParam("MobileApp", MOBILE_APP)
+                    .queryParam("imageYN", "Y")
+                    .queryParam("subImageYN", "Y")
+                    .queryParam("numOfRows", "20")
+                    .queryParam("_type", "json")
+                    .build(true)
+                    .toUriString();
+
+            log.debug("fetchDetailImages URL: {}", url);
+            
+            String rawJson = restTemplate.getForObject(url, String.class);
+            
+            var root = objectMapper.readTree(rawJson);
+            var itemsNode = root.path("response").path("body").path("items").path("item");
+            
+            List<String> imageUrls = new ArrayList<>();
+            
+            if (itemsNode.isArray()) {
+                for (var item : itemsNode) {
+                    String originUrl = item.path("originimgurl").asText(null);
+                    if (originUrl != null && !originUrl.isBlank()) {
+                        imageUrls.add(originUrl);
+                        log.debug("Image found: {}", originUrl);
+                    }
+                }
+            } else if (!itemsNode.isMissingNode()) {
+                // 단일 이미지인 경우
+                String originUrl = itemsNode.path("originimgurl").asText(null);
+                if (originUrl != null && !originUrl.isBlank()) {
+                    imageUrls.add(originUrl);
+                }
+            }
+            
+            log.info("contentId={} 이미지 {}개 수집", contentId, imageUrls.size());
+            return imageUrls;
+            
+        } catch (Exception e) {
+            log.warn("detailImage1 조회 실패 contentId={}", contentId, e);
+            return new ArrayList<>();
+        }
+    }
 }

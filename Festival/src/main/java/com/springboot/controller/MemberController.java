@@ -4,6 +4,8 @@ import com.springboot.domain.Member;
 import com.springboot.dto.ChangePasswordForm;
 import com.springboot.dto.EditProfileForm;
 import com.springboot.service.MemberService;
+import com.springboot.dto.BookmarkResponse;
+import com.springboot.service.BookmarkService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,27 +23,37 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.security.Principal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/members")
 public class MemberController {
 
     private final MemberService memberService;
+    private final BookmarkService bookmarkService;  // ✅ 추가
 
-    public MemberController(MemberService memberService) {
+    // ✅ 생성자에 BookmarkService 추가
+    public MemberController(MemberService memberService, BookmarkService bookmarkService) {
         this.memberService = memberService;
+        this.bookmarkService = bookmarkService;
     }
 
     // 마이페이지
     @GetMapping("/mypage")
-    public String myPage(Principal principal, Model model) {
-        if (principal == null) {
-            return "redirect:/auth/login";
-        }
-
+    public String mypage(Principal principal, Model model) {
         Member member = memberService.getCurrentMember(principal);
-        model.addAttribute("member", member);
+        
+        // 북마크 목록 조회
+        List<BookmarkResponse> bookmarks = bookmarkService.getBookmarks(member)
+                .stream()
+                .map(BookmarkResponse::from)
+                .collect(Collectors.toList());
 
+        model.addAttribute("member", member);
+        model.addAttribute("bookmarks", bookmarks);
+        model.addAttribute("bookmarkCount", bookmarks.size());
+        
         return "mypage";
     }
 
@@ -97,7 +109,7 @@ public class MemberController {
         return "redirect:/members/mypage?passwordChanged";
     }
     
- // 프로필 수정 폼
+    // 프로필 수정 폼
     @GetMapping("/edit")
     public String editProfileForm(Principal principal, Model model) {
         if (principal == null) {

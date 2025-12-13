@@ -48,6 +48,65 @@
             </a>
         </div>
 
+        <!-- ✅ 북마크 섹션 추가 -->
+        <h2 class="mypage-section-title">
+            나의 북마크 
+            <span class="bookmark-count" th:text="|${bookmarkCount}개|">0개</span>
+        </h2>
+        
+        <div th:if="${#lists.isEmpty(bookmarks)}" class="bookmark-empty">
+            아직 북마크한 축제가 없습니다.
+        </div>
+
+        <div th:if="${!#lists.isEmpty(bookmarks)}" class="bookmark-list">
+            <div th:each="bookmark : ${bookmarks}" class="bookmark-item">
+                <div class="bookmark-image-wrapper" 
+                     th:if="${bookmark.imageUrl != null}">
+                    <img th:src="${bookmark.imageUrl}" 
+                         alt="축제 이미지"
+                         class="bookmark-image">
+                </div>
+                <div class="bookmark-image-wrapper bookmark-no-image" 
+                     th:if="${bookmark.imageUrl == null}">
+                    <span class="no-image-text">이미지 없음</span>
+                </div>
+                
+                <div class="bookmark-info">
+                    <h3 class="bookmark-title" th:text="${bookmark.festivalName}">
+                        축제 이름
+                    </h3>
+                    
+                    <div class="bookmark-meta">
+                        <span class="bookmark-period"
+                              th:if="${bookmark.startDate != null and bookmark.endDate != null}"
+                              th:text="${#temporals.format(bookmark.startDate, 'yyyy.MM.dd') + ' ~ ' + #temporals.format(bookmark.endDate, 'yyyy.MM.dd')}">
+                            2025.12.11 ~ 2025.12.14
+                        </span>
+                        
+                        <span class="bookmark-location" 
+                              th:if="${bookmark.location != null and !#strings.isEmpty(bookmark.location)}"
+                              th:text="${bookmark.location}">
+                            부산 해운대구
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="bookmark-actions">
+                    <a th:href="@{/festivals/{id}(id=${bookmark.festivalId})}"
+                       class="btn-view">
+                        상세보기
+                    </a>
+                    
+                    <button type="button" 
+                            class="btn-remove"
+                            th:data-bookmark-id="${bookmark.bookmarkId}"
+                            th:data-festival-name="${bookmark.festivalName}">
+                        삭제
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="mypage-danger">
             <form th:action="@{/members/delete}" method="post">
                 <button type="submit" class="btn-danger">회원 탈퇴</button>
@@ -55,6 +114,37 @@
         </div>
     </section>
 </main>
+
+<script>
+    // 북마크 삭제 기능
+    document.querySelectorAll('.btn-remove').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const bookmarkId = this.dataset.bookmarkId;
+            const festivalName = this.dataset.festivalName;
+            
+            if (!confirm(`'${festivalName}' 북마크를 삭제하시겠습니까?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/bookmarks/${bookmarkId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('북마크가 삭제되었습니다.');
+                    location.reload();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || '북마크 삭제에 실패했습니다.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('북마크 삭제 중 오류가 발생했습니다.');
+            }
+        });
+    });
+</script>
 
 </body>
 </html>

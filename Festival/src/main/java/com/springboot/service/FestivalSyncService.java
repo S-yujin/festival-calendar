@@ -1,5 +1,6 @@
 package com.springboot.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.springboot.domain.FestivalEvent;
 import com.springboot.domain.FestivalMaster;
 import com.springboot.dto.TourApiDto;
@@ -28,7 +29,6 @@ public class FestivalSyncService {
 
     /**
      * 2025년 축제 데이터를 TourAPI에서 가져와서 동기화
-     * 트랜잭션 없이 각 항목을 독립적으로 처리
      */
     public void sync2025Festivals() {
         log.info("=== 2025년 축제 동기화 시작 ===");
@@ -60,7 +60,7 @@ public class FestivalSyncService {
     }
 
     /**
-     * 단일 축제 동기화 (각각 독립적인 트랜잭션)
+     * 단일 축제 동기화
      */
     @Transactional
     public boolean syncSingleFestival(TourApiDto.Item item) {
@@ -73,7 +73,7 @@ public class FestivalSyncService {
     }
 
     /**
-     * 특정 연도의 축제 상세 정보를 TourAPI에서 가져와서 업데이트
+     * 특정 연도의 축제 상세 정보(overview)를 TourAPI에서 가져와서 업데이트
      */
     @Transactional
     public void syncTourApiForYear(int year) {
@@ -110,6 +110,67 @@ public class FestivalSyncService {
         log.info("[TourAPI Sync] year={} 업데이트된 master 수={}", year, updated);
     }
 
+    /**
+     * 특정 연도 축제의 상세 이미지들을 수집
+     */
+    @Transactional
+    public void syncImagesForYear(int year) {
+        LocalDate start = LocalDate.of(year, 1, 1);
+        LocalDate end = LocalDate.of(year, 12, 31);
+
+        List<FestivalEvent> events = eventRepository.findOverlapping(start, end);
+        log.info("[Image Sync] year={} 대상 이벤트 수={}", year, events.size());
+
+        int updated = 0;
+        int skipped = 0;
+
+        for (FestivalEvent e : events) {
+            FestivalMaster m = e.getMaster();
+            if (m == null) continue;
+
+            // 이미 이미지를 수집했으면 스킵
+            if (m.getImageUrls() != null && !m.getImageUrls().isEmpty()) {
+                skipped++;
+                continue;
+            }
+
+            Long contentId = m.getTourApiContentId();
+            if (contentId == null) continue;
+
+            try {
+                List<String> images = tourApiClient.fetchDetailImages(String.valueOf(contentId));
+                
+                if (!images.isEmpty()) {
+                    // JSON 배열로 저장
+                    ObjectMapper mapper = new ObjectMapper();
+                    m.setImageUrls(mapper.writeValueAsString(images));
+                    
+                    // 첫 번째 이미지를 originalImageUrl로도 저장
+                    if (m.getOriginalImageUrl() == null || m.getOriginalImageUrl().isEmpty()) {
+                        m.setOriginalImageUrl(images.get(0));
+                    }
+                    
+                    masterRepository.save(m);
+                    updated++;
+                    
+                    log.info("이미지 수집 완료: contentId={}, count={}", contentId, images.size());
+                }
+                
+                // API 호출 제한 방지 (0.1초 대기)
+                Thread.sleep(100);
+                
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                log.warn("이미지 수집 중단됨");
+                break;
+            } catch (Exception ex) {
+                log.warn("이미지 수집 실패: contentId={}", contentId, ex);
+            }
+        }
+
+        log.info("[Image Sync] year={} 완료: 업데이트={}, 스킵={}", year, updated, skipped);
+    }
+
     private FestivalMaster findOrCreateMaster(TourApiDto.Item item) {
         String contentId = item.getContentid();
         if (contentId == null || contentId.isBlank()) {
@@ -132,10 +193,17 @@ public class FestivalSyncService {
             master.setTourApiContentId(contentIdLong);
         }
         
+        // 기본 정보 업데이트
         master.setFstvlNm(item.getTitle());
         master.setAddr1(item.getAddr1());
         master.setFirstImageUrl(item.getFirstimage());
         
+        // firstimage2 저장
+        if (item.getFirstimage2() != null && !item.getFirstimage2().isBlank()) {
+            master.setFirstImageUrl2(item.getFirstimage2());
+        }
+        
+        // 좌표 정보
         if (item.getMapx() != null && !item.getMapx().isBlank()) {
             master.setMapX(parseDouble(item.getMapx()));
         }
