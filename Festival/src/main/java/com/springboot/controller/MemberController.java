@@ -33,7 +33,7 @@ public class MemberController {
     }
 
     // 마이페이지
-    @GetMapping("/me")
+    @GetMapping("/mypage")
     public String myPage(Principal principal, Model model) {
         if (principal == null) {
             return "redirect:/auth/login";
@@ -94,7 +94,7 @@ public class MemberController {
         memberService.changePassword(member, form.getNewPassword());
 
         // 성공 후 마이페이지로
-        return "redirect:/members/me?passwordChanged";
+        return "redirect:/members/mypage?passwordChanged";
     }
     
  // 프로필 수정 폼
@@ -137,7 +137,7 @@ public class MemberController {
         memberService.updateName(member, form.getName());
 
         // 수정 후 마이페이지로 리다이렉트
-        return "redirect:/members/me?profileUpdated";
+        return "redirect:/members/mypage?profileUpdated";
     }
 
     // 회원 탈퇴 처리

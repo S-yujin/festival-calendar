@@ -24,7 +24,7 @@
                     OOO님 환영합니다
                 </span>
 
-                <a th:href="@{/members/me}" style="margin-left: 8px;">마이페이지</a>
+                <a th:href="@{/members/mypage}" style="margin-left: 8px;">마이페이지</a>
 
                 <form th:action="@{/logout}" method="post" class="logout-form">
                     <input th:if="${_csrf != null}" type="hidden"

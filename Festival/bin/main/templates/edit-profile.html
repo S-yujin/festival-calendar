@@ -1,27 +1,59 @@
 <!DOCTYPE html>
-<html xmls:th="hhtp//www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-	<title>프로필 수정</title>
-	<meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <title>프로필 수정</title>
+    <link rel="stylesheet" th:href="@{/css/header.css}"/>
+    <link rel="stylesheet" th:href="@{/css/mypage.css}"/>
+    <link rel="stylesheet" th:href="@{/css/profile-form.css}"/>
 </head>
 <body>
-	<div th:replace="~{fragments/header :: header}"></div>
-	
-	<h2>프로필 수정</h2>
-	
-	<form th:action="@{/members/edit}" th:object="${form}" method="post">
-	    <div>
-	        <label for="name">이름</label>
-	        <input id="name" type="text" th:field="*{name}" />
-	    </div>
+<div th:replace="~{fragments/header :: siteHeader}"></div>
 
-	    <div>
-	        <label for="email">이메일</label>
-	        <input id="email" type="email" th:field="*{email}" readonly />
-	    </div>
+<main class="page-wrapper">
+    <section class="form-card">
+        <div class="form-header">
+            <h1 class="form-title">프로필 수정</h1>
+        </div>
 
-	    <button type="submit">저장</button>
-	</form>
-	
+        <form th:action="@{/members/edit}" th:object="${form}" method="post" class="profile-form">
+            <!-- 이름 입력 -->
+            <div class="form-group">
+                <label for="name" class="form-label">이름 <span class="required">*</span></label>
+                <input 
+                    id="name" 
+                    type="text" 
+                    th:field="*{name}"
+                    class="form-input"
+                    placeholder="이름을 입력하세요"
+                    required />
+                <div th:if="${#fields.hasErrors('name')}" class="error-message">
+                    <span th:errors="*{name}"></span>
+                </div>
+            </div>
+
+            <!-- 이메일 (읽기 전용) -->
+            <div class="form-group">
+                <label for="email" class="form-label">이메일</label>
+                <input 
+                    id="email" 
+                    type="email" 
+                    th:field="*{email}"
+                    class="form-input form-input-readonly"
+                    readonly />
+                <p class="form-help">이메일은 변경할 수 없습니다.</p>
+            </div>
+
+            <!-- 버튼 그룹 -->
+            <div class="form-actions">
+                <a th:href="@{/members/mypage}" class="btn-cancel-link">
+                    <button type="button" class="btn-cancel">취소</button>
+                </a>
+                <button type="submit" class="btn-submit">저장하기</button>
+            </div>
+        </form>
+    </section>
+</main>
+
 </body>
 </html>
