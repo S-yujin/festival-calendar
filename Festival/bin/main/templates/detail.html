@@ -39,14 +39,6 @@
                     </span>
                 </div>
 
-                <div>
-                    <span class="meta-label">장소</span>
-                    <span class="meta-value"
-                          th:text="${festival.master != null ? (festival.master.ctprvnNm + ' ' + festival.master.signguNm) : ''}">
-                        부산 해운대구
-                    </span>
-                </div>
-
                 <div th:if="${festival.master != null and festival.master.telNo != null}">
                     <span class="meta-label">문의</span>
                     <span class="meta-value" th:text="${festival.master.telNo}">

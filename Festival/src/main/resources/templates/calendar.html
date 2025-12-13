@@ -44,7 +44,7 @@
                 </a>
             </div>
 
-            <!-- ✅ 모드 토글 -->
+            <!-- 모드 토글 -->
             <div class="cal-mode">
                 <a class="mode-btn"
                    th:classappend="${mode=='real' ? ' active' : ''}"
@@ -61,7 +61,6 @@
 
             <!-- 연/월 직접 선택 -->
             <form th:action="@{/festivals/calendar}" method="get" class="cal-form">
-                <!-- ✅ mode 유지 -->
                 <input type="hidden" name="mode" th:value="${mode}">
 
                 <label>
@@ -102,7 +101,6 @@
                          th:with="dayDate=${start.withDayOfMonth(day)},
                                   dayFestivals=${festivalMap[dayDate]}">
 
-                        <!-- ✅ 날짜 클릭 시 mode 유지 -->
                         <a th:href="@{'/festivals/calendar'(year=${year}, month=${month}, day=${day}, mode=${mode})}"
                            th:class="${dayDate} == ${selectedDate} ? 'cal-cell day-link selected' : 'cal-cell day-link'">
 
@@ -126,13 +124,8 @@
                                           'etc'
                                         }">
 
-                                    <!-- ✅ 카테고리 점 -->
                                     <span class="cal-dot" th:classappend="' dot-' + ${cat}"></span>
-
-                                    <!-- ✅ 예상 배지 -->
                                     <span th:if="${isExpected}" class="cal-badge cal-badge-expected">예상</span>
-
-                                    <!-- ✅ 표시용 이름 -->
                                     <span th:text="${#strings.replace(f.fcltyNm,'[예상] ','')}">축제명</span>
                                 </li>
 
@@ -168,7 +161,7 @@
                              th:each="f : ${dailyFestivals}"
                              th:with="isExpected=${#strings.startsWith(f.fcltyNm,'[예상]')}">
 
-                        <!-- ✅ 실제(id 있음) -->
+                        <!-- 실제(id 있음) -->
                         <a th:if="${f.id != null}"
                            th:href="@{/festivals/{id}(id=${f.id})}">
 
@@ -184,15 +177,19 @@
                                                ${#temporals.format(f.fstvlEnd,'MM.dd')}">
                                     11.30 ~ 01.09
                                 </span>
-                                <span class="dot">·</span>
-                                <span class="loc"
-                                      th:text="${f.master != null ? (f.master.ctprvnNm + ' ' + f.master.signguNm) : ''}">
-                                    경기 성남시
-                                </span>
+                                <!-- 위치 정보가 있을 때만 표시 -->
+                                <th:block th:if="${f.master != null and (f.master.ctprvnNm != null or f.master.signguNm != null)}">
+                                    <span class="dot">·</span>
+                                    <span class="loc">
+                                        <th:block th:text="${f.master.ctprvnNm != null ? f.master.ctprvnNm : ''}"></th:block>
+                                        <th:block th:if="${f.master.ctprvnNm != null and f.master.signguNm != null}"> </th:block>
+                                        <th:block th:text="${f.master.signguNm != null ? f.master.signguNm : ''}"></th:block>
+                                    </span>
+                                </th:block>
                             </p>
                         </a>
 
-                        <!-- ✅ 예상(id 없음) → 패턴 상세로 이동 -->
+                        <!-- 예상(id 없음) → 패턴 상세로 이동 -->
                         <a th:if="${f.id == null}"
                            th:href="@{/festivals/expected(name=${#strings.replace(f.fcltyNm,'[예상] ','')}, year=${year})}"
                            class="month-card-no-link">
@@ -209,11 +206,15 @@
                                                #temporals.format(f.fstvlEnd,'MM.dd')}">
                                     11.30 ~ 01.09
                                 </span>
-                                <span class="dot">·</span>
-                                <span class="loc"
-                                      th:text="${f.master != null ? (f.master.ctprvnNm + ' ' + f.master.signguNm) : ''}">
-                                    경기 성남시
-                                </span>
+                                <!-- 위치 정보가 있을 때만 표시 -->
+                                <th:block th:if="${f.master != null and (f.master.ctprvnNm != null or f.master.signguNm != null)}">
+                                    <span class="dot">·</span>
+                                    <span class="loc">
+                                        <th:block th:text="${f.master.ctprvnNm != null ? f.master.ctprvnNm : ''}"></th:block>
+                                        <th:block th:if="${f.master.ctprvnNm != null and f.master.signguNm != null}"> </th:block>
+                                        <th:block th:text="${f.master.signguNm != null ? f.master.signguNm : ''}"></th:block>
+                                    </span>
+                                </th:block>
                             </p>
                         </a>
 
