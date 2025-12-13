@@ -236,3 +236,169 @@
     text-decoration: underline;
     font-weight: 500;
 }
+/* 리뷰 작성 폼 */
+.review-form-wrapper {
+    margin-top: 24px;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 12px;
+}
+
+.review-form-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.review-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.rating-input {
+    display: flex;
+    gap: 8px;
+    font-size: 24px;
+}
+
+.star-btn {
+    cursor: pointer;
+    color: #d1d5db;
+    transition: color 0.2s;
+}
+
+.star-btn:hover {
+    color: #fbbf24;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-cancel,
+.btn-submit {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    color: #374151;
+}
+
+.btn-cancel:hover {
+    background: #f9fafb;
+}
+
+.btn-submit {
+    background: #6366f1;
+    color: white;
+    border: none;
+    font-weight: 500;
+}
+
+.btn-submit:hover {
+    background: #4f46e5;
+}
+
+/* 리뷰 수정 모달 */
+.review-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 32px;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 24px;
+}
+
+.edit-rating-input {
+    display: flex;
+    gap: 8px;
+    font-size: 24px;
+}
+
+.edit-star-btn {
+    cursor: pointer;
+    color: #d1d5db;
+    transition: color 0.2s;
+}
+
+.edit-star-btn:hover {
+    color: #fbbf24;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .review-form-wrapper {
+        padding: 16px;
+    }
+
+    .modal-content {
+        padding: 24px;
+        width: 95%;
+    }
+}

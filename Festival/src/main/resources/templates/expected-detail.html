@@ -40,10 +40,13 @@
 
     <ul th:if="${!#lists.isEmpty(history)}" style="margin:0; padding-left:18px;">
       <li th:each="h : ${history}">
-        <span th:text="${#temporals.format(h.fstvlBeginDe,'yyyy.MM.dd')}">2023.10.28</span>
+        <span th:text="${#temporals.format(h.fstvlStart,'yyyy.MM.dd')}">2023.10.28</span>
         ~
-        <span th:text="${#temporals.format(h.fstvlEndDe,'yyyy.MM.dd')}">2023.10.30</span>
-        <span style="color:#666;" th:text="|(${h.ctprvnNm} ${h.signguNm})|">(지역)</span>
+        <span th:text="${#temporals.format(h.fstvlEnd,'yyyy.MM.dd')}">2023.10.30</span>
+        <span style="color:#666;" 
+              th:text="|(${h.master != null ? h.master.ctprvnNm : ''} ${h.master != null ? h.master.signguNm : ''})|">
+          (지역)
+        </span>
       </li>
     </ul>
   </section>

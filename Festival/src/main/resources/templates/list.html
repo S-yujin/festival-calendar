@@ -107,8 +107,8 @@
 
                         <!-- 썸네일 -->
                         <div class="card-thumb">
-                            <img th:if="${f.firstImageUrl != null}"
-                                 th:src="${f.firstImageUrl}"
+                            <img th:if="${f.master != null and f.master.firstImageUrl != null}"
+                                 th:src="${f.master.firstImageUrl}"
                                  alt="축제 이미지">
                         </div>
 
@@ -119,13 +119,13 @@
                             <h3 class="card-title" th:text="${f.fcltyNm}">축제명</h3>
 
                             <p class="card-period"
-                               th:text="${#temporals.format(f.fstvlBeginDe, 'MM.dd')} + ' ~ ' +
-                                        ${#temporals.format(f.fstvlEndDe, 'MM.dd')}">
+                               th:text="${#temporals.format(f.fstvlStart, 'MM.dd')} + ' ~ ' +
+                                        ${#temporals.format(f.fstvlEnd, 'MM.dd')}">
                                 00.00 ~ 00.00
                             </p>
 
                             <p class="card-loc"
-                               th:text="${f.ctprvnNm + ' ' + f.signguNm}">
+                               th:text="${f.master != null ? (f.master.ctprvnNm + ' ' + f.master.signguNm) : ''}">
                                 지역
                             </p>
                         </div>

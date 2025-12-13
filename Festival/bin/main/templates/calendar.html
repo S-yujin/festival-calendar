@@ -26,7 +26,7 @@
             </p>
 
             <p th:if="${year > 2025}" style="margin-top:8px; font-size:13px; color:#8a5a00;">
-                ※ 2026년 이후 달력에는 ‘개최 예상’ 일정이 함께 표시될 수 있어요.
+                ※ 2026년 이후 달력에는 '개최 예상' 일정이 함께 표시될 수 있어요.
             </p>
         </div>
 
@@ -180,13 +180,13 @@
                             <p class="month-festival-meta">
                                 <span class="period"
                                       th:text="${isExpected ? '개최 예상일: ' : ''} +
-                                               ${#temporals.format(f.fstvlBeginDe,'MM.dd')} + ' ~ ' +
-                                               ${#temporals.format(f.fstvlEndDe,'MM.dd')}">
+                                               ${#temporals.format(f.fstvlStart,'MM.dd')} + ' ~ ' +
+                                               ${#temporals.format(f.fstvlEnd,'MM.dd')}">
                                     11.30 ~ 01.09
                                 </span>
                                 <span class="dot">·</span>
                                 <span class="loc"
-                                      th:text="${f.ctprvnNm + ' ' + f.signguNm}">
+                                      th:text="${f.master != null ? (f.master.ctprvnNm + ' ' + f.master.signguNm) : ''}">
                                     경기 성남시
                                 </span>
                             </p>
@@ -205,13 +205,13 @@
                             <p class="month-festival-meta">
                                 <span class="period"
                                       th:text="${'개최 예상일: ' +
-                                               #temporals.format(f.fstvlBeginDe,'MM.dd') + ' ~ ' +
-                                               #temporals.format(f.fstvlEndDe,'MM.dd')}">
+                                               #temporals.format(f.fstvlStart,'MM.dd') + ' ~ ' +
+                                               #temporals.format(f.fstvlEnd,'MM.dd')}">
                                     11.30 ~ 01.09
                                 </span>
                                 <span class="dot">·</span>
                                 <span class="loc"
-                                      th:text="${f.ctprvnNm + ' ' + f.signguNm}">
+                                      th:text="${f.master != null ? (f.master.ctprvnNm + ' ' + f.master.signguNm) : ''}">
                                     경기 성남시
                                 </span>
                             </p>

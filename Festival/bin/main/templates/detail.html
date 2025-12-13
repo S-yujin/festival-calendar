@@ -33,8 +33,8 @@
                 <div>
                     <span class="meta-label">기간</span>
                     <span class="meta-value"
-                          th:text="${#temporals.format(festival.fstvlBeginDe, 'yyyy.MM.dd')} + ' ~ ' +
-                                   ${#temporals.format(festival.fstvlEndDe,   'yyyy.MM.dd')}">
+                          th:text="${#temporals.format(festival.fstvlStart, 'yyyy.MM.dd')} + ' ~ ' +
+                                   ${#temporals.format(festival.fstvlEnd, 'yyyy.MM.dd')}">
                         2025.12.11 ~ 2025.12.14
                     </span>
                 </div>
@@ -42,24 +42,24 @@
                 <div>
                     <span class="meta-label">장소</span>
                     <span class="meta-value"
-                          th:text="${festival.ctprvnNm + ' ' + festival.signguNm}">
+                          th:text="${festival.master != null ? (festival.master.ctprvnNm + ' ' + festival.master.signguNm) : ''}">
                         부산 해운대구
                     </span>
                 </div>
 
-                <div th:if="${festival.telNo}">
+                <div th:if="${festival.master != null and festival.master.telNo != null}">
                     <span class="meta-label">문의</span>
-                    <span class="meta-value" th:text="${festival.telNo}">
+                    <span class="meta-value" th:text="${festival.master.telNo}">
                         051-000-0000
                     </span>
                 </div>
 
-                <div th:if="${festival.hmpgAddr}">
+                <div th:if="${festival.master != null and festival.master.hmpgAddr != null}">
                     <span class="meta-label">홈페이지</span>
                     <a class="meta-link"
-                       th:href="${festival.hmpgAddr}"
+                       th:href="${festival.master.hmpgAddr}"
                        target="_blank"
-                       th:text="${festival.hmpgAddr}">
+                       th:text="${festival.master.hmpgAddr}">
                         홈페이지 바로가기
                     </a>
                 </div>
@@ -75,10 +75,11 @@
 
         <!-- 오른쪽: 대표 이미지 -->
         <div class="hero-image">
-            <img th:if="${festival.firstImageUrl != null}"
-                 th:src="${festival.firstImageUrl}"
+            <img th:if="${festival.master != null and festival.master.firstImageUrl != null}"
+                 th:src="${festival.master.firstImageUrl}"
                  alt="축제 대표 이미지">
-            <div th:if="${festival.firstImageUrl == null}" class="hero-image-placeholder">
+            <div th:if="${festival.master == null or festival.master.firstImageUrl == null}" 
+                 class="hero-image-placeholder">
                 대표 이미지가 없습니다.
             </div>
         </div>
@@ -89,21 +90,15 @@
         <h2>축제 소개</h2>
 
         <!-- overview가 있으면 overview 사용 -->
-        <p class="detail-overview" th:if="${festival.overview != null}"
-           th:text="${festival.overview}">
+        <p class="detail-overview" 
+           th:if="${festival.master != null and festival.master.overview != null}"
+           th:text="${festival.master.overview}">
             축제에 대한 소개 문구가 들어갑니다.
         </p>
 
-        <!-- overview가 없고 fstvlCn이 있으면 fstvlCn 사용 -->
+        <!-- overview가 없으면 안내 문구 -->
         <p class="detail-overview"
-           th:if="${festival.overview == null && festival.fstvlCn != null}"
-           th:text="${festival.fstvlCn}">
-            상세 설명 텍스트
-        </p>
-
-        <!-- 둘 다 없으면 안내 문구 -->
-        <p class="detail-overview"
-           th:if="${festival.overview == null && festival.fstvlCn == null}">
+           th:if="${festival.master == null or festival.master.overview == null}">
             현재 제공되는 상세 소개 문구가 없습니다.
         </p>
     </section>
@@ -115,27 +110,21 @@
         <table class="info-table">
             <tr>
                 <th>개최 기간</th>
-                <td th:text="${#temporals.format(festival.fstvlBeginDe, 'yyyy.MM.dd')} + ' ~ ' +
-                             ${#temporals.format(festival.fstvlEndDe,   'yyyy.MM.dd')}">
+                <td th:text="${#temporals.format(festival.fstvlStart, 'yyyy.MM.dd')} + ' ~ ' +
+                             ${#temporals.format(festival.fstvlEnd, 'yyyy.MM.dd')}">
                     2025.12.11 ~ 2025.12.14
                 </td>
             </tr>
             <tr>
                 <th>개최 장소</th>
-                <td th:text="${festival.addr1}">
+                <td th:text="${festival.master != null ? festival.master.addr1 : ''}">
                     부산 해운대구 벡스코 일원
                 </td>
             </tr>
-            <tr th:if="${festival.originNm}">
+            <tr th:if="${festival.originNm != null}">
                 <th>주최 / 주관</th>
                 <td th:text="${festival.originNm}">
                     주최/주관 정보
-                </td>
-            </tr>
-            <tr th:if="${festival.mlsfcNm}">
-                <th>축제 유형</th>
-                <td th:text="${festival.mlsfcNm}">
-                    전시/체험
                 </td>
             </tr>
         </table>
@@ -145,7 +134,7 @@
     <section class="detail-section">
         <h2>위치 정보</h2>
 
-        <p class="detail-address" th:text="${festival.addr1}">
+        <p class="detail-address" th:text="${festival.master != null ? festival.master.addr1 : ''}">
             주소 텍스트
         </p>
 
@@ -187,15 +176,11 @@
                 </p>
 
                 <div class="review-footer">
-                    <a th:if="${review.attachmentId != null}"
-                       th:href="@{/files/{id}(id=${review.attachmentId})}"
-                       class="review-attachment">
-                        첨부 이미지 다운로드
-                    </a>
+                    <!-- ✅ attachmentId 체크 부분 제거 (파일 기능은 나중에 구현) -->
 
                     <!-- 본인 리뷰일 때만 수정/삭제 버튼 -->
                     <div class="review-actions"
-                         th:if="${session.member != null and session.member.id == review.memberId}">
+                         th:if="${member != null and review.memberId != null and member.id.equals(review.memberId)}">
                         <button type="button"
                                 class="btn-text edit-review-btn"
                                 th:data-id="${review.id}"
@@ -213,8 +198,59 @@
             </li>
         </ul>
 
+        <!-- 리뷰 작성 폼 (로그인한 사용자만) -->
+        <div th:if="${member != null}" class="review-form-wrapper">
+            <h3 class="review-form-title">리뷰 작성하기</h3>
+            
+            <form id="reviewForm" enctype="multipart/form-data" class="review-form">
+                <!-- 별점 -->
+                <div class="form-group">
+                    <label class="form-label">
+                        별점 <span class="required">*</span>
+                    </label>
+                    <div class="rating-input">
+                        <span class="star-btn" data-rating="1">★</span>
+                        <span class="star-btn" data-rating="2">★</span>
+                        <span class="star-btn" data-rating="3">★</span>
+                        <span class="star-btn" data-rating="4">★</span>
+                        <span class="star-btn" data-rating="5">★</span>
+                    </div>
+                    <input type="hidden" id="ratingValue" name="rating" value="5" required>
+                </div>
+
+                <!-- 리뷰 내용 -->
+                <div class="form-group">
+                    <label for="reviewContent" class="form-label">
+                        리뷰 내용 <span class="required">*</span>
+                    </label>
+                    <textarea 
+                        id="reviewContent" 
+                        name="content" 
+                        rows="4" 
+                        placeholder="축제에 대한 솔직한 후기를 남겨주세요."
+                        required
+                        class="form-textarea"></textarea>
+                </div>
+
+                <!-- 제출 버튼 -->
+                <div class="form-actions">
+                    <button 
+                        type="button" 
+                        onclick="document.getElementById('reviewForm').reset(); updateStarRating(5);"
+                        class="btn-cancel">
+                        취소
+                    </button>
+                    <button 
+                        type="submit"
+                        class="btn-submit">
+                        리뷰 등록
+                    </button>
+                </div>
+            </form>
+        </div>
+
         <!-- 로그인 안내 -->
-        <div class="review-login-hint" th:if="${session.member == null}">
+        <div class="review-login-hint" th:if="${member == null}">
             리뷰를 남기려면 먼저
             <a th:href="@{/auth/login}" class="link-inline">로그인</a>
             해주세요.
@@ -236,9 +272,9 @@
 <!-- 상세 페이지 지도 스크립트 -->
 <script th:inline="javascript">
 /*<![CDATA[*/
-    // 위도/경도 (엔티티 필드명에 맞게 fcltyLa, fcltyLo 사용)
-    var lat = /*[[${festival.fcltyLa}]]*/ 35.1796;
-    var lng = /*[[${festival.fcltyLo}]]*/ 129.0756;
+    // 위도/경도 (FestivalMaster의 mapX, mapY 사용)
+    var lat = /*[[${festival.master != null ? festival.master.mapY : null}]]*/ null;
+    var lng = /*[[${festival.master != null ? festival.master.mapX : null}]]*/ null;
 
     // 좌표가 없으면 기본값으로 부산 시청 근처 사용
     if (lat == null || lng == null) {
@@ -254,6 +290,247 @@
     var marker = new naver.maps.Marker({
         position: new naver.maps.LatLng(lat, lng),
         map: map
+    });
+/*]]>*/
+</script>
+
+<!-- 리뷰 별점 및 폼 제출 스크립트 -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+    // 별점 클릭 이벤트
+    document.querySelectorAll('.star-btn').forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = parseInt(this.dataset.rating);
+            updateStarRating(rating);
+        });
+    });
+
+    // 별점 업데이트 함수
+    function updateStarRating(rating) {
+        document.getElementById('ratingValue').value = rating;
+        document.querySelectorAll('.star-btn').forEach((star, index) => {
+            if (index < rating) {
+                star.style.color = '#fbbf24'; // 노란색
+            } else {
+                star.style.color = '#d1d5db'; // 회색
+            }
+        });
+    }
+
+    // 초기 별점 5점으로 설정
+    updateStarRating(5);
+
+    // 리뷰 폼 제출
+    document.getElementById('reviewForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const eventId = /*[[${festival.id}]]*/ 0;
+        const rating = document.getElementById('ratingValue').value;
+        const content = document.getElementById('reviewContent').value;
+
+        if (!content.trim()) {
+            alert('리뷰 내용을 입력해주세요.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('rating', rating);
+        formData.append('content', content);
+        
+        // 파일 기능은 나중에 추가
+        // const fileInput = document.getElementById('reviewFile');
+        // if (fileInput && fileInput.files.length > 0) {
+        //     formData.append('file', fileInput.files[0]);
+        // }
+
+        try {
+            const response = await fetch(`/api/reviews/event/${eventId}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('리뷰가 등록되었습니다.');
+                location.reload(); // 페이지 새로고침
+            } else {
+                const error = await response.text();
+                alert('리뷰 등록 실패: ' + error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('리뷰 등록 중 오류가 발생했습니다.');
+        }
+    });
+
+    // 리뷰 수정 버튼 이벤트
+    document.querySelectorAll('.edit-review-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const reviewId = this.dataset.id;
+            const content = this.dataset.content;
+            const rating = parseInt(this.dataset.rating);
+
+            // 수정 모달 또는 폼 영역 생성
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
+
+            modal.innerHTML = `
+                <div style="background: white; padding: 32px; border-radius: 12px; max-width: 500px; width: 90%;">
+                    <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 24px;">리뷰 수정</h3>
+                    
+                    <form id="editReviewForm" style="display: flex; flex-direction: column; gap: 16px;">
+                        <div>
+                            <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px;">
+                                별점 <span style="color: #ef4444;">*</span>
+                            </label>
+                            <div class="edit-rating-input" style="display: flex; gap: 8px; font-size: 24px;">
+                                <span class="edit-star-btn" data-rating="1" style="cursor: pointer; color: #d1d5db;">★</span>
+                                <span class="edit-star-btn" data-rating="2" style="cursor: pointer; color: #d1d5db;">★</span>
+                                <span class="edit-star-btn" data-rating="3" style="cursor: pointer; color: #d1d5db;">★</span>
+                                <span class="edit-star-btn" data-rating="4" style="cursor: pointer; color: #d1d5db;">★</span>
+                                <span class="edit-star-btn" data-rating="5" style="cursor: pointer; color: #d1d5db;">★</span>
+                            </div>
+                            <input type="hidden" id="editRatingValue" value="${rating}">
+                        </div>
+
+                        <div>
+                            <label for="editContent" style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px;">
+                                리뷰 내용 <span style="color: #ef4444;">*</span>
+                            </label>
+                            <textarea 
+                                id="editContent" 
+                                rows="4" 
+                                required
+                                style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; resize: vertical;">${content}</textarea>
+                        </div>
+
+                        <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;">
+                            <button 
+                                type="button" 
+                                class="cancel-edit-btn"
+                                style="padding: 10px 20px; background: #fff; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; cursor: pointer;">
+                                취소
+                            </button>
+                            <button 
+                                type="submit"
+                                style="padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                                수정 완료
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // 별점 초기화
+            function updateEditStarRating(rating) {
+                document.getElementById('editRatingValue').value = rating;
+                document.querySelectorAll('.edit-star-btn').forEach((star, index) => {
+                    if (index < rating) {
+                        star.style.color = '#fbbf24';
+                    } else {
+                        star.style.color = '#d1d5db';
+                    }
+                });
+            }
+            updateEditStarRating(rating);
+
+            // 별점 클릭 이벤트
+            document.querySelectorAll('.edit-star-btn').forEach(star => {
+                star.addEventListener('click', function() {
+                    const r = parseInt(this.dataset.rating);
+                    updateEditStarRating(r);
+                });
+            });
+
+            // 취소 버튼
+            modal.querySelector('.cancel-edit-btn').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+
+            // 모달 배경 클릭 시 닫기
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            });
+
+            // 수정 폼 제출
+            document.getElementById('editReviewForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const newContent = document.getElementById('editContent').value;
+                const newRating = document.getElementById('editRatingValue').value;
+
+                if (!newContent.trim()) {
+                    alert('리뷰 내용을 입력해주세요.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/reviews/${reviewId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            content: newContent,
+                            rating: parseInt(newRating)
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert('리뷰가 수정되었습니다.');
+                        location.reload();
+                    } else {
+                        const error = await response.text();
+                        alert('리뷰 수정 실패: ' + error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('리뷰 수정 중 오류가 발생했습니다.');
+                }
+            });
+        });
+    });
+
+    // 리뷰 삭제 버튼 이벤트
+    document.querySelectorAll('.delete-review-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (!confirm('정말 이 리뷰를 삭제하시겠습니까?')) {
+                return;
+            }
+
+            const reviewId = this.dataset.id;
+
+            try {
+                const response = await fetch(`/api/reviews/${reviewId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('리뷰가 삭제되었습니다.');
+                    location.reload();
+                } else {
+                    const error = await response.text();
+                    alert('리뷰 삭제 실패: ' + error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('리뷰 삭제 중 오류가 발생했습니다.');
+            }
+        });
     });
 /*]]>*/
 </script>

@@ -1,7 +1,7 @@
 package com.springboot.service;
 
 import com.springboot.domain.FestivalAttachment;
-import com.springboot.domain.Festivals;
+import com.springboot.domain.FestivalEvent;
 import com.springboot.repository.FestivalAttachmentRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -36,7 +36,7 @@ public class FileStorageService {
     }
 
     public FestivalAttachment storeFile(MultipartFile file,
-                                        Festivals festival,
+                                        FestivalEvent event,  // Festivals → FestivalEvent
                                         String uploaderName) throws IOException {
 
         if (file.isEmpty()) {
@@ -56,7 +56,7 @@ public class FileStorageService {
         Files.copy(file.getInputStream(), target);
 
         FestivalAttachment att = new FestivalAttachment();
-        att.setFestival(festival);
+        att.setEvent(event);  // setFestival → setEvent
         att.setOriginalFilename(originalFilename);
         att.setStoredFilename(storedFilename);
         att.setContentType(file.getContentType());

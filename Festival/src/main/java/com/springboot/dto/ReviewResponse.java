@@ -16,6 +16,7 @@ public class ReviewResponse {
     private int rating;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long memberId;  // ✅ 추가
 
     public static ReviewResponse from(FestivalReview review) {
         return new ReviewResponse(
@@ -24,7 +25,8 @@ public class ReviewResponse {
                 review.getContent(),
                 review.getRating(),
                 review.getCreatedAt(),
-                review.getUpdatedAt()
+                review.getUpdatedAt(),
+                review.getMember() != null ? review.getMember().getId() : null  // ✅ 추가
         );
     }
 }

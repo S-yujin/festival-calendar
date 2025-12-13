@@ -1,6 +1,10 @@
 package com.springboot.config;
 
 import com.springboot.security.MemberDetailsService;
+import com.springboot.domain.Member;
+import com.springboot.repository.MemberRepository;
+
+import jakarta.servlet.http.HttpSession;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,18 +21,19 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final MemberDetailsService memberDetailsService;
+    private final MemberRepository memberRepository;
 
-    public SecurityConfig(MemberDetailsService memberDetailsService) {
+    public SecurityConfig(MemberDetailsService memberDetailsService, 
+                         MemberRepository memberRepository) {
         this.memberDetailsService = memberDetailsService;
+        this.memberRepository = memberRepository;
     }
     
-    // 비밀번호 암호화
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // AuthenticationManager 빈 (나중에 필요할 수도 있어서 같이 등록)
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration) throws Exception {
@@ -39,31 +44,45 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-        		// URL 접근권한
-        		.csrf(csrf -> csrf
-        				.ignoringRequestMatchers("/api/**")
-        				)
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/**")
+                )
                 .userDetailsService(memberDetailsService)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/signup", "/css/**", "/js/**", "/files/**").permitAll()
+                        .requestMatchers("/auth/**", "/css/**", "/js/**", "/files/**", "/images/**").permitAll()
+                        .requestMatchers("/festivals", "/festivals/**").permitAll()
+                        .requestMatchers("/api/**").authenticated()  // API는 인증 필요
                         .requestMatchers("/members/**").authenticated()
                         .anyRequest().permitAll()
                 )       
                 
                 // 폼 로그인 설정
                 .formLogin(form -> form
-                        .loginPage("/auth/login")     // 로그인 페이지 URL
-                        .loginProcessingUrl("/auth/login")  // 로그인 POST 처리 URL
-                        .usernameParameter("email")    // 폼에서 쓰는 name
+                        .loginPage("/auth/login")
+                        .loginProcessingUrl("/auth/login")
+                        .usernameParameter("email")
                         .passwordParameter("password")
-                        .defaultSuccessUrl("/festivals", true)
+                        .successHandler((request, response, authentication) -> {
+                            // 로그인 성공 시 세션에 member 저장
+                            String email = authentication.getName();
+                            Member member = memberRepository.findByEmail(email)
+                                    .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                            
+                            HttpSession session = request.getSession();
+                            session.setAttribute("member", member);
+                            
+                            response.sendRedirect("/festivals");
+                        })
+                        .failureUrl("/auth/login?error")
                         .permitAll()
                 )
                 
                 // 로그아웃 설정
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
+                        .logoutUrl("/auth/logout")
                         .logoutSuccessUrl("/festivals")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
                         .permitAll()
                 );
 

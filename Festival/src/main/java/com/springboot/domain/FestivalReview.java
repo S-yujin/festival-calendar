@@ -1,43 +1,54 @@
 package com.springboot.domain;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
-@Setter
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "festival_review")
+@Getter
+@Setter
 public class FestivalReview {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 어떤 축제에 대한 리뷰인지
+    // Festivals → FestivalEvent로 변경
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "festival_id", nullable = false)
-    private Festivals festival;
+    @JoinColumn(name = "festival_id")
+    private FestivalEvent event;
 
-    // 누가 썼는지 (Member 연결)
+    // Member 관계 추가
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id")
     private Member member;
-
-    @Column(nullable = false)
-    private String nickname;   // 화면에 보일 이름 (member.getName() 복사해두기)
 
     @Column(nullable = false, length = 1000)
     private String content;
-
-    // 별점 1~5
-    private int rating;
-
-    // (옵션) 첨부 이미지 파일 id (없으면 null)
-    private Long attachmentId;
-
+    
+    @Column(nullable = false)
+    private Integer rating;
+    
+    @Column(length = 50)
+    private String nickname;
+    
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

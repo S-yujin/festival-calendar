@@ -1,16 +1,18 @@
 package com.springboot.service;
 
-import com.springboot.domain.Festivals;
-import com.springboot.repository.FestivalsRepository;
-import com.springboot.tourapi.FestivalMatcher;
+import com.springboot.domain.FestivalEvent;
+import com.springboot.domain.FestivalMaster;
+import com.springboot.dto.TourApiDto;
+import com.springboot.repository.FestivalEventRepository;
+import com.springboot.repository.FestivalMasterRepository;
 import com.springboot.tourapi.TourApiClient;
-import com.springboot.dto.TourApiDto.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
@@ -18,104 +20,183 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FestivalSyncService {
 
-    private final FestivalsRepository festivalRepository;
     private final TourApiClient tourApiClient;
+    private final FestivalEventRepository eventRepository;
+    private final FestivalMasterRepository masterRepository;
+
+    private static final DateTimeFormatter YYYYMMDD = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /**
-     * 2025년 축제에 대해 TourAPI 정보(대표사진/좌표 등) 동기화
-     * - DB: 2025년 축제만 조회
-     * - TourAPI: 전국 2025년 축제 전체 조회
-     * - 비어있는 필드만 TourAPI 데이터로 채움
+     * 2025년 축제 데이터를 TourAPI에서 가져와서 동기화
+     * 트랜잭션 없이 각 항목을 독립적으로 처리
      */
-    @Transactional
     public void sync2025Festivals() {
-
-        // 1. 우리 DB에서 2025년에 열리는 축제들만 가져오기
-        LocalDate start = LocalDate.of(2025, 1, 1);
-        LocalDate end   = LocalDate.of(2025, 12, 31);
-
-        List<Festivals> dbFestivals =
-                festivalRepository.findByFstvlBeginDeBetween(start, end);
-
-        log.info("DB 2025년 축제 수: {}", dbFestivals.size());
-
-        // 2. TourAPI에서 2025년 축제 목록 전체 가져오기 (전국)
-        //    → TourApiClient 쪽에서 areacode/sigunguCode는 null 로 처리
-        List<Item> apiFestivals = tourApiClient.fetchFestivals2025(null, null);
-        log.info("TourAPI 2025년 축제 수: {}",
-                apiFestivals != null ? apiFestivals.size() : 0);
-
-        if (apiFestivals == null || apiFestivals.isEmpty()) {
-            log.warn("TourAPI에서 2025년 축제 목록을 가져오지 못했습니다. 동기화를 건너뜁니다.");
-            return;
-        }
-
-        // 3. 매칭 + 업데이트
-        for (Festivals f : dbFestivals) {
-
-            Item matched = apiFestivals.stream()
-                    .filter(item -> FestivalMatcher.isSameFestival(f, item))
-                    .findFirst()
-                    .orElse(null);
-
-            if (matched == null) {
-                // 어떤 축제가 매칭 안 되는지 보려고 우리 쪽 정보 위주로 찍기
-                log.warn("TourAPI 매칭 실패 - 축제명: {}, 시작일: {}, 종료일: {}, 주소: {}",
-                        f.getFstvlNm(),
-                        f.getFstvlBeginDe(),
-                        f.getFstvlEndDe(),
-                        f.getAddr1());
-                continue;
-            }
-
-            // ====== 비어 있는 필드만 TourAPI 값으로 채우기 ======
-
-            // 1) contentId
-            if (f.getTourapiContentId() == null) {
-                f.setTourapiContentId(matched.getContentid());
-            }
-
-            // 2) 대표 이미지
-            if (isBlank(f.getFirstImageUrl()) && !isBlank(matched.getFirstimage())) {
-                f.setFirstImageUrl(matched.getFirstimage());
-            }
-
-            // 3) 주소
-            if (isBlank(f.getAddr1()) && !isBlank(matched.getAddr1())) {
-                f.setAddr1(matched.getAddr1());
-            }
-
-            // 4) mapx/mapy (문자열로 저장하고 있는 필드라면 그대로)
-            if (isBlank(f.getMapX()) && !isBlank(matched.getMapx())) {
-                f.setMapX(matched.getMapx());
-            }
-            if (isBlank(f.getMapY()) && !isBlank(matched.getMapy())) {
-                f.setMapY(matched.getMapy());
-            }
-
-            // 5) 지도에서 쓰는 위도/경도(fcltyLa / fcltyLo) – 둘 다 비어 있을 때만 세팅
-            if (f.getFcltyLa() == null && f.getFcltyLo() == null &&
-                    matched.getMapx() != null && matched.getMapy() != null) {
-                try {
-                    // TourAPI: mapy = 위도, mapx = 경도
-                    f.setFcltyLa(Double.parseDouble(matched.getMapy()));
-                    f.setFcltyLo(Double.parseDouble(matched.getMapx()));
-                } catch (NumberFormatException e) {
-                    log.warn("위경도 파싱 실패 contentId={}", matched.getContentid(), e);
+        log.info("=== 2025년 축제 동기화 시작 ===");
+        
+        List<TourApiDto.Item> festivals = tourApiClient.fetchFestivals2025(null, null);
+        log.info("TourAPI에서 가져온 축제 수: {}", festivals.size());
+        
+        int created = 0;
+        int updated = 0;
+        int failed = 0;
+        
+        for (TourApiDto.Item item : festivals) {
+            try {
+                boolean isNew = syncSingleFestival(item);
+                if (isNew) {
+                    created++;
+                } else {
+                    updated++;
                 }
+            } catch (Exception e) {
+                failed++;
+                log.warn("축제 동기화 실패: contentId={}, title={}, error={}", 
+                    item.getContentid(), item.getTitle(), e.getMessage());
             }
-
-            // 동기화 완료 플래그
-            f.setDetailLoaded(true);
-
-            log.info("TourAPI 매칭 성공: {} -> contentId={}",
-                    f.getFstvlNm(), matched.getContentid());
         }
-
-        // @Transactional 이라서 자동 flush
+        
+        log.info("=== 2025년 축제 동기화 완료: 생성={}, 업데이트={}, 실패={} ===", 
+            created, updated, failed);
     }
 
-    private boolean isBlank(String s) {
-        return s == null || s.isBlank();
+    /**
+     * 단일 축제 동기화 (각각 독립적인 트랜잭션)
+     */
+    @Transactional
+    public boolean syncSingleFestival(TourApiDto.Item item) {
+        FestivalMaster master = findOrCreateMaster(item);
+        if (master == null) {
+            throw new IllegalStateException("Master 생성 실패");
+        }
+        
+        return createOrUpdateEvent(master, item);
+    }
+
+    /**
+     * 특정 연도의 축제 상세 정보를 TourAPI에서 가져와서 업데이트
+     */
+    @Transactional
+    public void syncTourApiForYear(int year) {
+        LocalDate start = LocalDate.of(year, 1, 1);
+        LocalDate end = LocalDate.of(year, 12, 31);
+
+        List<FestivalEvent> events = eventRepository.findOverlapping(start, end);
+        log.info("[TourAPI Sync] year={} 대상 이벤트 수={}", year, events.size());
+
+        int updated = 0;
+
+        for (FestivalEvent e : events) {
+            FestivalMaster m = e.getMaster();
+            if (m == null) continue;
+
+            if (Boolean.TRUE.equals(m.getDetailLoaded())) continue;
+
+            Long contentId = m.getTourApiContentId();
+            if (contentId == null) continue;
+
+            try {
+                String overview = tourApiClient.fetchOverview(String.valueOf(contentId));
+                if (overview != null && !overview.isBlank()) {
+                    m.setOverview(overview);
+                    m.setDetailLoaded(true);
+                    masterRepository.save(m);
+                    updated++;
+                }
+            } catch (Exception ex) {
+                log.warn("[TourAPI Sync] 상세 정보 조회 실패: contentId={}", contentId, ex);
+            }
+        }
+
+        log.info("[TourAPI Sync] year={} 업데이트된 master 수={}", year, updated);
+    }
+
+    private FestivalMaster findOrCreateMaster(TourApiDto.Item item) {
+        String contentId = item.getContentid();
+        if (contentId == null || contentId.isBlank()) {
+            return null;
+        }
+        
+        Long contentIdLong;
+        try {
+            contentIdLong = Long.parseLong(contentId);
+        } catch (NumberFormatException e) {
+            log.warn("Invalid contentId: {}", contentId);
+            return null;
+        }
+        
+        FestivalMaster master = masterRepository.findByTourApiContentId(contentIdLong)
+            .orElse(null);
+        
+        if (master == null) {
+            master = new FestivalMaster();
+            master.setTourApiContentId(contentIdLong);
+        }
+        
+        master.setFstvlNm(item.getTitle());
+        master.setAddr1(item.getAddr1());
+        master.setFirstImageUrl(item.getFirstimage());
+        
+        if (item.getMapx() != null && !item.getMapx().isBlank()) {
+            master.setMapX(parseDouble(item.getMapx()));
+        }
+        if (item.getMapy() != null && !item.getMapy().isBlank()) {
+            master.setMapY(parseDouble(item.getMapy()));
+        }
+        
+        return masterRepository.save(master);
+    }
+
+    private boolean createOrUpdateEvent(FestivalMaster master, TourApiDto.Item item) {
+        if (master == null || master.getId() == null) {
+            log.warn("Master ID가 null입니다. contentId={}", item.getContentid());
+            return false;
+        }
+        
+        LocalDate startDate = parseYyyymmdd(item.getEventstartdate());
+        LocalDate endDate = parseYyyymmdd(item.getEventenddate());
+        
+        if (startDate == null || endDate == null) {
+            log.debug("날짜 파싱 실패: contentId={}, start={}, end={}", 
+                item.getContentid(), item.getEventstartdate(), item.getEventenddate());
+            return false;
+        }
+        
+        List<FestivalEvent> existingEvents = eventRepository
+            .findByMasterAndFstvlStartAndFstvlEnd(master, startDate, endDate);
+        
+        FestivalEvent event;
+        boolean isNew;
+        
+        if (existingEvents.isEmpty()) {
+            event = FestivalEvent.create(master, startDate, endDate);
+            isNew = true;
+        } else {
+            event = existingEvents.get(0);
+            isNew = false;
+        }
+        
+        event.setFcltyNm(item.getTitle());
+        event.setRawId(item.getContentid());
+        
+        eventRepository.save(event);
+        return isNew;
+    }
+
+    private LocalDate parseYyyymmdd(String yyyymmdd) {
+        if (yyyymmdd == null || yyyymmdd.isBlank()) return null;
+        try {
+            return LocalDate.parse(yyyymmdd.trim(), YYYYMMDD);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Double parseDouble(String s) {
+        if (s == null || s.isBlank()) return null;
+        try {
+            return Double.parseDouble(s.trim());
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

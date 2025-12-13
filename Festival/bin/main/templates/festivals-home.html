@@ -31,10 +31,10 @@
         <!-- 오른쪽 메인 카드 (오늘 진행 중인 축제 중 첫 번째) -->
 		<div class="hero-main-card"
 		     th:if="${ongoingFestivals != null and !#lists.isEmpty(ongoingFestivals)}">
-            <a th:href="@{|/festivals/${ongoingFestivals[0].id}|}">
+            <a th:href="@{|/festivals/${ongoingFestivals[0].master != null ? ongoingFestivals[0].master.id : ongoingFestivals[0].id}|}">
                 <div class="festival-thumb">
-                    <img th:src="${ongoingFestivals[0].firstImageUrl != null ?
-                                  ongoingFestivals[0].firstImageUrl :
+                    <img th:src="${ongoingFestivals[0].master != null and ongoingFestivals[0].master.firstImageUrl != null ?
+                                  ongoingFestivals[0].master.firstImageUrl :
                                   '/images/default-festival.jpg'}"
                          alt="메인 축제 이미지">
                 </div>
@@ -42,13 +42,13 @@
                     <div class="hero-main-title"
                          th:text="${ongoingFestivals[0].fcltyNm}">축제 이름</div>
                     <div class="hero-main-meta"
-                         th:text="${#temporals.format(ongoingFestivals[0].fstvlBeginDe, 'MM.dd')} 
+                         th:text="${#temporals.format(ongoingFestivals[0].fstvlStart, 'MM.dd')} 
                                   + ' ~ ' + 
-                                  ${#temporals.format(ongoingFestivals[0].fstvlEndDe, 'MM.dd')}">
+                                  ${#temporals.format(ongoingFestivals[0].fstvlEnd, 'MM.dd')}">
                         11.30 ~ 01.09
                     </div>
                     <div class="hero-main-meta"
-                         th:text="${ongoingFestivals[0].signguNm}">지역</div>
+                         th:text="${ongoingFestivals[0].master != null ? ongoingFestivals[0].master.signguNm : ''}">지역</div>
                 </div>
             </a>
         </div>
@@ -61,9 +61,11 @@
 
         <div class="card-grid">
             <div class="festival-card" th:each="f : ${ongoingFestivals}">
-                <a th:href="@{|/festivals/${f.id}|}">
+                <a th:href="@{|/festivals/${f.master != null ? f.master.id : f.id}|}">
                     <div class="festival-thumb">
-                        <img th:src="${f.firstImageUrl != null ? f.firstImageUrl : '/images/default-festival.jpg'}"
+                        <img th:src="${f.master != null and f.master.firstImageUrl != null ? 
+                                      f.master.firstImageUrl : 
+                                      '/images/default-festival.jpg'}"
                              alt="축제 이미지">
                     </div>
                     <div class="festival-body">
@@ -71,12 +73,12 @@
                             축제 이름
                         </div>
                         <div class="festival-period"
-                             th:text="${#temporals.format(f.fstvlBeginDe, 'MM.dd')} + ' ~ ' +
-                                      ${#temporals.format(f.fstvlEndDe, 'MM.dd')}">
+                             th:text="${#temporals.format(f.fstvlStart, 'MM.dd')} + ' ~ ' +
+                                      ${#temporals.format(f.fstvlEnd, 'MM.dd')}">
                             11.30 ~ 01.09
                         </div>
                         <div class="festival-loc"
-                             th:text="${f.signguNm != null ? f.signguNm : f.ctprvnNm}">
+                             th:text="${f.master != null ? (f.master.signguNm != null ? f.master.signguNm : f.master.ctprvnNm) : ''}">
                             지역명
                         </div>
                     </div>
@@ -96,19 +98,21 @@
 
         <div class="card-grid">
             <div class="festival-card" th:each="f : ${monthlyFestivals}">
-                <a th:href="@{|/festivals/${f.id}|}">
+                <a th:href="@{|/festivals/${f.master != null ? f.master.id : f.id}|}">
                     <div class="festival-thumb">
-                        <img th:src="${f.firstImageUrl != null ? f.firstImageUrl : '/images/default-festival.jpg'}"
+                        <img th:src="${f.master != null and f.master.firstImageUrl != null ? 
+                                      f.master.firstImageUrl : 
+                                      '/images/default-festival.jpg'}"
                              alt="축제 이미지">
                     </div>
                     <div class="festival-body">
                         <div class="festival-title" th:text="${f.fcltyNm}">축제 이름</div>
                         <div class="festival-period"
-                             th:text="${#temporals.format(f.fstvlBeginDe, 'MM.dd')} + ' ~ ' +
-                                      ${#temporals.format(f.fstvlEndDe, 'MM.dd')}">
+                             th:text="${#temporals.format(f.fstvlStart, 'MM.dd')} + ' ~ ' +
+                                      ${#temporals.format(f.fstvlEnd, 'MM.dd')}">
                         </div>
                         <div class="festival-loc"
-                             th:text="${f.signguNm != null ? f.signguNm : f.ctprvnNm}">
+                             th:text="${f.master != null ? (f.master.signguNm != null ? f.master.signguNm : f.master.ctprvnNm) : ''}">
                         </div>
                     </div>
                 </a>
@@ -121,7 +125,7 @@
     </section>
 
     <footer>
-        © <span th:text="${#temporals.year(#dates.createNow())}">2025</span> Festival Service
+        © <span th:text="${#dates.year(#dates.createNow())}">2025</span> Festival Service
     </footer>
 
 </div>

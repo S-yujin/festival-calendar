@@ -34,7 +34,34 @@ public class TourApiClient {
 
     private static final String MOBILE_OS = "ETC";
     private static final String MOBILE_APP = "festival-project";
+    
+    public String fetchOverview(String contentId) {
+        try {
+            String url = UriComponentsBuilder
+                    .fromUriString(baseUrl + "/detailCommon2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("contentId", contentId)
+                    .queryParam("overviewYN", "Y")
+                    .queryParam("defaultYN", "Y")
+                    .queryParam("_type", "json")
+                    .build(true)
+                    .toUriString();
 
+            String rawJson = restTemplate.getForObject(url, String.class);
+
+            var root = objectMapper.readTree(rawJson);
+            var item0 = root.path("response").path("body").path("items").path("item");
+            if (item0.isArray() && item0.size() > 0) item0 = item0.get(0);
+
+            String overview = item0.path("overview").asText(null);
+            return (overview == null || overview.isBlank()) ? null : overview;
+
+        } catch (Exception e) {
+            log.warn("detailCommon2 overview 조회 실패 contentId={}", contentId, e);
+            return null;
+        }
+    }
+    
     /**
      * 2025년 특정 지역(옵션)에 대해 contentTypeId=15 축제 목록 전체 가져오기
      */
