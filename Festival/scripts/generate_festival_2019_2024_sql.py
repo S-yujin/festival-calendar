@@ -36,7 +36,6 @@ def parse_yyyymmdd(x):
     if not txt:
         return None
 
-    # 숫자만 남기기
     digits = re.sub(r"[^0-9]", "", txt)
     if len(digits) >= 8:
         digits = digits[:8]
@@ -49,7 +48,7 @@ def parse_yyyymmdd(x):
 
 
 def date_literal(x):
-    """YYYY-MM-DD or None -> SQL 리터럴"""
+    """YYYY-MM-DD or None -> SQL 리터럴(날짜)"""
     d = parse_yyyymmdd(x)
     return "NULL" if d is None else f"'{d}'"
 
@@ -58,7 +57,6 @@ def detect_year_from_path(p: Path):
     m = re.search(r"(19|20)\d{2}", p.name)
     if m:
         return int(m.group(0))
-    # 폴더명에서도 시도
     m2 = re.search(r"(19|20)\d{2}", str(p.parent))
     if m2:
         return int(m2.group(0))
@@ -108,12 +106,10 @@ def load_kc488_csv(path: Path) -> pd.DataFrame:
     year = detect_year_from_path(path)
 
     # raw_id 충돌 방지: 연도 + 원본 ID
-    # (ID 자체가 연도마다 다시 시작할 수 있어서)
     def build_raw_id(row):
         rid = s(row.get("ID"))
         y = year
         if y is None:
-            # 시작일에서 연도 추출
             start = parse_yyyymmdd(row.get("FSTVL_BEGIN_DE"))
             y = int(start[:4]) if start else 0
         return f"KC488-{y}-{rid}"
@@ -128,34 +124,28 @@ def load_kc488_csv(path: Path) -> pd.DataFrame:
     df["legaldong_nm"] = df["LEGALDONG_NM"].apply(s) if "LEGALDONG_NM" in df.columns else ""
     df["adstrd_nm"] = df["ADSTRD_NM"].apply(s) if "ADSTRD_NM" in df.columns else ""
     df["zip_no"] = df["ZIP_NO"].apply(s) if "ZIP_NO" in df.columns else ""
-    # 도로명주소가 있으면 addr1에
     df["addr1"] = df["RDNMADR_NM"].apply(s) if "RDNMADR_NM" in df.columns else ""
 
     df["tel_no"] = df["TEL_NO"].apply(s) if "TEL_NO" in df.columns else ""
     df["hmpg_addr"] = df["HMPG_ADDR"].apply(s) if "HMPG_ADDR" in df.columns else ""
 
-    # 좌표: (경도/위도) -> (mapx/mapy)
+    # 좌표
     df["mapx"] = df["FCLTY_LO"] if "FCLTY_LO" in df.columns else None
     df["mapy"] = df["FCLTY_LA"] if "FCLTY_LA" in df.columns else None
 
-    # event 쪽 필드
+    # event 쪽 필드(스키마 유지용으로 필요한 것만)
     df["raw_id"] = df["RAW_ID_GEN"]
-    df["lclas_nm"] = df["LCLAS_NM"].apply(s)
-    df["mlsfc_nm"] = df["MLSFC_NM"].apply(s)
     df["start_date"] = df["FSTVL_BEGIN_DE"]
     df["end_date"] = df["FSTVL_END_DE"]
-    df["fstvl_cn"] = df["FSTVL_CN"].apply(s) if "FSTVL_CN" in df.columns else ""
 
-    # 출처/기준일
     df["origin_nm"] = df["ORIGIN_NM"].apply(s) if "ORIGIN_NM" in df.columns else "KC_488_WNTY_CLTFSTVL"
     df["data_base_de"] = df["BASE_DE"] if "BASE_DE" in df.columns else None
 
-    # 마스터에 없는 필드(이미지/overview/tourapi_content_id)는 빈값/NULL
+    # 마스터에 없는 필드들은 빈값/NULL
     df["first_image_url"] = ""
     df["overview"] = ""
     df["tourapi_content_id"] = None
 
-    # 필요한 컬럼만
     keep = [
         # master
         "fstvl_nm", "ctprvn_nm", "signgu_nm",
@@ -163,112 +153,96 @@ def load_kc488_csv(path: Path) -> pd.DataFrame:
         "tel_no", "hmpg_addr", "mapx", "mapy",
         "first_image_url", "overview", "tourapi_content_id",
         # event
-        "raw_id", "lclas_nm", "mlsfc_nm",
-        "start_date", "end_date", "fstvl_cn",
+        "raw_id",
+        "start_date", "end_date",
         "origin_nm", "data_base_de",
     ]
     return df[keep].copy()
 
 
 # =========================
-# SQL 생성
+# SQL 생성 (현재 스키마 유지 버전)
 # =========================
-def build_master_upsert_sql(df_master: pd.DataFrame) -> list[str]:
+def build_master_insert_sql(df_master: pd.DataFrame) -> list[str]:
     """
-    festival_master는 UNIQUE (fstvl_nm, ctprvn_nm, signgu_nm) 이 있으니
-    그걸 기준으로 업서트.
-    기존 값이 비어있으면 새 값으로 채우는 방향(데이터 보강).
+    [현재 스키마 유지]
+    - festival_master: UNIQUE가 없다고 가정하고, (fstvl_nm, ctprvn_nm, signgu_nm) 조합이 없을 때만 INSERT
+    - updated_at 같은 컬럼 사용 안 함
     """
     lines = []
-    cols = [
-        "fstvl_nm", "ctprvn_nm", "signgu_nm",
-        "legaldong_nm", "adstrd_nm", "zip_no", "addr1",
-        "tel_no", "hmpg_addr", "mapx", "mapy",
-        "first_image_url", "overview", "tourapi_content_id",
-    ]
 
-    # 중복 제거(마스터 단위)
     dfu = df_master.drop_duplicates(subset=["fstvl_nm", "ctprvn_nm", "signgu_nm"]).copy()
 
-    # 배치 INSERT (너무 길어지는 거 방지)
-    batch_size = 300
-    rows = []
-
-    def row_to_values(r):
-        # 숫자 좌표는 NULL 처리
-        def num_or_null(x):
-            if is_nan(x) or s(x) == "":
-                return "NULL"
-            try:
-                return str(float(x))
-            except Exception:
-                return "NULL"
-
-        v = [
-            f"'{esc_sql(r['fstvl_nm'])}'",
-            f"'{esc_sql(r['ctprvn_nm'])}'",
-            f"'{esc_sql(r['signgu_nm'])}'",
-            f"'{esc_sql(r.get('legaldong_nm',''))}'",
-            f"'{esc_sql(r.get('adstrd_nm',''))}'",
-            f"'{esc_sql(r.get('zip_no',''))}'",
-            f"'{esc_sql(r.get('addr1',''))}'",
-            f"'{esc_sql(r.get('tel_no',''))}'",
-            f"'{esc_sql(r.get('hmpg_addr',''))}'",
-            num_or_null(r.get("mapx")),
-            num_or_null(r.get("mapy")),
-            f"'{esc_sql(r.get('first_image_url',''))}'",
-            f"'{esc_sql(r.get('overview',''))}'",
-            "NULL" if is_nan(r.get("tourapi_content_id")) or s(r.get("tourapi_content_id")) == "" else f"'{esc_sql(r.get('tourapi_content_id'))}'",
-        ]
-        return "(" + ",".join(v) + ")"
+    def num_or_null(x):
+        if is_nan(x) or s(x) == "":
+            return "NULL"
+        try:
+            return str(float(x))
+        except Exception:
+            return "NULL"
 
     for _, r in dfu.iterrows():
-        rows.append(row_to_values(r))
-        if len(rows) >= batch_size:
-            lines.append(make_master_insert_statement(cols, rows))
-            rows = []
-    if rows:
-        lines.append(make_master_insert_statement(cols, rows))
+        fstvl_nm = esc_sql(r["fstvl_nm"])
+        ctprvn_nm = esc_sql(r["ctprvn_nm"])
+        signgu_nm = esc_sql(r["signgu_nm"])
+
+        legaldong_nm = esc_sql(r.get("legaldong_nm", ""))
+        adstrd_nm = esc_sql(r.get("adstrd_nm", ""))
+        zip_no = esc_sql(r.get("zip_no", ""))
+        addr1 = esc_sql(r.get("addr1", ""))
+        tel_no = esc_sql(r.get("tel_no", ""))
+        hmpg_addr = esc_sql(r.get("hmpg_addr", ""))
+
+        mapx = num_or_null(r.get("mapx"))
+        mapy = num_or_null(r.get("mapy"))
+
+        first_image_url = esc_sql(r.get("first_image_url", ""))
+        overview = esc_sql(r.get("overview", ""))
+
+        # tourapi_content_id: bigint면 숫자로만 넣는 게 안전
+        tourapi = r.get("tourapi_content_id")
+        tourapi_lit = "NULL"
+        if not is_nan(tourapi) and s(tourapi) != "":
+            try:
+                tourapi_lit = str(int(float(tourapi)))
+            except Exception:
+                tourapi_lit = "NULL"
+
+        stmt = f"""
+INSERT INTO festival_master
+(fstvl_nm, ctprvn_nm, signgu_nm,
+ legaldong_nm, adstrd_nm, zip_no, addr1,
+ tel_no, hmpg_addr, mapx, mapy,
+ first_image_url, overview, tourapi_content_id,
+ detail_loaded, first_image_url2, original_image_url, image_urls)
+SELECT
+ '{fstvl_nm}', '{ctprvn_nm}', '{signgu_nm}',
+ '{legaldong_nm}', '{adstrd_nm}', '{zip_no}', '{addr1}',
+ '{tel_no}', '{hmpg_addr}', {mapx}, {mapy},
+ '{first_image_url}', '{overview}', {tourapi_lit},
+ b'0', NULL, NULL, NULL
+WHERE NOT EXISTS (
+  SELECT 1 FROM festival_master m
+  WHERE m.fstvl_nm = '{fstvl_nm}'
+    AND m.ctprvn_nm = '{ctprvn_nm}'
+    AND m.signgu_nm = '{signgu_nm}'
+  LIMIT 1
+);
+""".strip()
+
+        lines.append(stmt)
 
     return lines
 
 
-def make_master_insert_statement(cols: list[str], values_rows: list[str]) -> str:
-    insert_cols = ",".join(cols)
-    values_part = ",\n".join(values_rows)
-
-    # MySQL 8 권장: VALUES() 대신 alias 사용
-    # 기존 값이 비어있으면 new 값으로 채움
-    def fill_if_empty(col):
-        return f"{col} = COALESCE(NULLIF(festival_master.{col},''), new.{col})"
-
-    update_part = ",\n".join([
-        fill_if_empty("legaldong_nm"),
-        fill_if_empty("adstrd_nm"),
-        fill_if_empty("zip_no"),
-        fill_if_empty("addr1"),
-        fill_if_empty("tel_no"),
-        fill_if_empty("hmpg_addr"),
-        "mapx = COALESCE(festival_master.mapx, new.mapx)",
-        "mapy = COALESCE(festival_master.mapy, new.mapy)",
-        fill_if_empty("first_image_url"),
-        fill_if_empty("overview"),
-        "tourapi_content_id = COALESCE(festival_master.tourapi_content_id, new.tourapi_content_id)",
-        "updated_at = CURRENT_TIMESTAMP",
-    ])
-
-    return (
-        f"INSERT INTO festival_master ({insert_cols})\n"
-        f"VALUES\n{values_part}\n"
-        f"AS new\n"
-        f"ON DUPLICATE KEY UPDATE\n{update_part};"
-    )
-
-
 def build_event_insert_sql(df_all: pd.DataFrame) -> list[str]:
     """
-    festival_event는 raw_id로 중복 방지(스키마에 UNIQUE가 없더라도 NOT EXISTS로 막음)
-    master_id는 (fstvl_nm, ctprvn_nm, signgu_nm)로 festival_master에서 찾아서 SELECT로 넣음
+    [현재 스키마 유지]
+    festival_event 컬럼이 아래라고 가정:
+    (master_id, raw_id, fclty_nm, fstvl_start, fstvl_end, origin_nm, data_base_de)
+
+    - master_id는 festival_master에서 (fstvl_nm, ctprvn_nm, signgu_nm)로 조회해서 넣음
+    - raw_id 중복은 NOT EXISTS로 차단
     """
     lines = []
 
@@ -278,36 +252,36 @@ def build_event_insert_sql(df_all: pd.DataFrame) -> list[str]:
         signgu_nm = esc_sql(r["signgu_nm"])
 
         raw_id = esc_sql(r["raw_id"])
-        lclas = esc_sql(r.get("lclas_nm", ""))
-        mlsfc = esc_sql(r.get("mlsfc_nm", ""))
+
+        # 현재 스키마 유지: event 쪽 fclty_nm에도 축제명을 저장(중복이지만 컬럼 존재하니 유지)
+        fclty_nm = esc_sql(r["fstvl_nm"])
 
         start_lit = date_literal(r.get("start_date"))
         end_lit = date_literal(r.get("end_date"))
 
-        cn = esc_sql(r.get("fstvl_cn", ""))
         origin = esc_sql(r.get("origin_nm", "KC_488_WNTY_CLTFSTVL"))
         base_de = date_literal(r.get("data_base_de"))
 
         stmt = f"""
 INSERT INTO festival_event
-(master_id, raw_id, lclas_nm, mlsfc_nm, start_date, end_date, fstvl_cn, origin_nm, data_base_de)
+(master_id, raw_id, fclty_nm, fstvl_start, fstvl_end, origin_nm, data_base_de)
 SELECT
     m.id,
     '{raw_id}',
-    '{lclas}',
-    '{mlsfc}',
+    '{fclty_nm}',
     {start_lit},
     {end_lit},
-    '{cn}',
     '{origin}',
     {base_de}
 FROM festival_master m
 WHERE m.fstvl_nm = '{fstvl_nm}'
   AND m.ctprvn_nm = '{ctprvn_nm}'
   AND m.signgu_nm = '{signgu_nm}'
-  AND NOT EXISTS (SELECT 1 FROM festival_event e WHERE e.raw_id = '{raw_id}')
+  AND NOT EXISTS (SELECT 1 FROM festival_event e WHERE e.raw_id = '{raw_id}' LIMIT 1)
+ORDER BY m.id ASC
 LIMIT 1;
 """.strip()
+
         lines.append(stmt)
 
     return lines
@@ -339,7 +313,6 @@ def main():
         (df_all["signgu_nm"].str.strip() != "")
     ].copy()
 
-    # 마스터 업서트용 df
     df_master = df_all[[
         "fstvl_nm", "ctprvn_nm", "signgu_nm",
         "legaldong_nm", "adstrd_nm", "zip_no", "addr1",
@@ -347,16 +320,16 @@ def main():
         "first_image_url", "overview", "tourapi_content_id",
     ]].copy()
 
-    master_sql = build_master_upsert_sql(df_master)
+    master_sql = build_master_insert_sql(df_master)
     event_sql = build_event_insert_sql(df_all)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
-        f.write("-- festival_master / festival_event import (2019~2024)\n")
+        f.write("-- festival_master / festival_event import (2019~2024) [schema-keep version]\n")
         f.write("SET NAMES utf8mb4;\n")
         f.write("START TRANSACTION;\n\n")
 
-        f.write("-- 1) master upsert\n")
+        f.write("-- 1) master insert (skip if (fstvl_nm, ctprvn_nm, signgu_nm) exists)\n")
         for stmt in master_sql:
             f.write(stmt + "\n\n")
 
@@ -366,7 +339,8 @@ def main():
 
         f.write("COMMIT;\n")
 
-    print(f"[INFO] 생성 완료: {out_path} (events={len(df_all)}, masters={df_master.drop_duplicates(subset=['fstvl_nm','ctprvn_nm','signgu_nm']).shape[0]})")
+    masters_cnt = df_master.drop_duplicates(subset=["fstvl_nm", "ctprvn_nm", "signgu_nm"]).shape[0]
+    print(f"[INFO] 생성 완료: {out_path} (events={len(df_all)}, masters~={masters_cnt})")
 
 
 if __name__ == "__main__":

@@ -16,6 +16,9 @@
     <form th:action="@{/festivals/list}" method="get"
           style="display:flex; gap:8px; width:100%; align-items:center;">
 
+        <!-- 숨겨진 필드: showAll 유지 -->
+        <input type="hidden" name="showAll" th:value="${showAll}">
+
         <!-- 지역 -->
         <div>
             <label for="region" style="font-size:13px; color:#555;">지역</label>
@@ -62,7 +65,7 @@
             </select>
         </div>
 
-        <!-- 키워드 (컨트롤러에서 q 처리할 때만 의미 있음) -->
+        <!-- 키워드 -->
         <div style="flex:1;">
             <label for="keyword" style="font-size:13px; color:#555;">키워드</label>
             <input type="text" id="keyword" name="q"
@@ -86,12 +89,31 @@
     <!-- 왼쪽: 리스트 패널 -->
     <main class="list-panel">
         <section>
-            <h1 th:text="|${year}년 전국 축제 한눈에 보기|">
-                2025년 전국 축제 한눈에 보기
-            </h1>
-            <p style="font-size:14px; color:#555; margin-top:4px;">
-                지역·날짜·유형·혼잡도 조건을 선택해서 원하는 축제를 빠르게 찾아보세요.
-            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                    <h1 th:text="${showAll == 'true' ? year + '년 전국 축제 한눈에 보기' : '현재 진행 중인 축제'}">
+                        현재 진행 중인 축제
+                    </h1>
+                    <p style="font-size:14px; color:#555; margin-top:4px;">
+                        <span th:if="${showAll != 'true'}">지금 열리고 있는 축제를 확인하세요.</span>
+                        <span th:if="${showAll == 'true'}">지역·날짜·유형·혼잡도 조건을 선택해서 원하는 축제를 빠르게 찾아보세요.</span>
+                    </p>
+                </div>
+
+                <!-- 전체/진행중 토글 버튼 -->
+                <div class="view-toggle">
+                    <a class="toggle-btn"
+                       th:classappend="${showAll != 'true' ? ' active' : ''}"
+                       th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate}, category=${category}, congestion=${congestion}, showAll='false')}">
+                        진행 중만
+                    </a>
+                    <a class="toggle-btn"
+                       th:classappend="${showAll == 'true' ? ' active' : ''}"
+                       th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate}, category=${category}, congestion=${congestion}, showAll='true')}">
+                        전체 보기
+                    </a>
+                </div>
+            </div>
         </section>
 
         <!-- 결과 없을 때 -->
@@ -105,7 +127,7 @@
                 <article class="festival-card" th:each="f : ${festivals}">
                     <a th:href="@{/festivals/{id}(id=${f.id})}">
 
-                        <!-- 썸네일 -->
+                        <!-- 인네일 -->
                         <div class="card-thumb">
                             <img th:if="${f.master != null and f.master.firstImageUrl != null}"
                                  th:src="${f.master.firstImageUrl}"
@@ -114,7 +136,18 @@
 
                         <!-- 텍스트 영역 -->
                         <div class="card-body">
-                            <span class="status-badge">축제</span>
+                            <span class="status-badge"
+                                  th:with="status=${T(com.springboot.domain.FestivalStatus).valueOf(
+                                            f.fstvlStart != null and f.fstvlEnd != null and
+                                            !today.isBefore(f.fstvlStart) and !today.isAfter(f.fstvlEnd) ? 'ONGOING' :
+                                            (today.isBefore(f.fstvlStart) ? 'UPCOMING' : 'PAST')
+                                        )}"
+                                  th:classappend="${status.name() == 'ONGOING' ? 'badge-ongoing' : 
+                                                   (status.name() == 'UPCOMING' ? 'badge-upcoming' : 'badge-past')}"
+                                  th:text="${status.name() == 'ONGOING' ? '진행 중' : 
+                                           (status.name() == 'UPCOMING' ? '예정' : '종료')}">
+                                축제
+                            </span>
 
                             <h3 class="card-title" th:text="${f.fcltyNm}">축제명</h3>
 
@@ -136,27 +169,17 @@
     </main>
 
     <!-- 오른쪽: 지도 패널 -->
-	<aside class="map-panel">
-	  <div class="map-toolbar">
-	    <a class="map-toggle"
-	       th:classappend="${mapMode == 'ongoing' ? ' active' : ''}"
-	       th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate}, category=${category}, congestion=${congestion}, mapMode='ongoing')}">
-	      진행중만
-	    </a>
+    <aside class="map-panel">
+        <div class="map-toolbar">
+            <span style="font-size: 14px; font-weight: 600; color: #333;">지도에서 보기</span>
+        </div>
 
-	    <a class="map-toggle"
-	       th:classappend="${mapMode == 'all' ? ' active' : ''}"
-	       th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate}, category=${category}, congestion=${congestion}, mapMode='all')}">
-	      전체
-	    </a>
-	  </div>
+        <p th:if="${#lists.isEmpty(markers)}" class="map-empty">
+            현재 지도에 표시할 축제가 없습니다.
+        </p>
 
-	  <p th:if="${#lists.isEmpty(markers)}" class="map-empty">
-	    현재 지도에 표시할 축제가 없습니다.
-	  </p>
-
-	  <div id="festivalMap"></div>
-	</aside>
+        <div id="festivalMap"></div>
+    </aside>
 
 </div>
 
@@ -180,20 +203,17 @@
     markers.forEach(function (m) {
       var position = new naver.maps.LatLng(m.lat, m.lng);
 
-      // status: "ONGOING" | "UPCOMING" | "PAST"
       var status = (m.status || "PAST");
 
       var marker = new naver.maps.Marker({
         position: position,
         map: map,
 
-        // ✅ HTML 마커 아이콘 (상태별 class 적용)
         icon: {
           content: '<div class="nm-marker ' + status + '"></div>',
-          anchor: new naver.maps.Point(7, 7) // 14x14의 중앙
+          anchor: new naver.maps.Point(7, 7)
         },
 
-        // ✅ 진행중이 위로 오게
         zIndex: (status === "ONGOING" ? 200 : status === "UPCOMING" ? 150 : 100)
       });
 

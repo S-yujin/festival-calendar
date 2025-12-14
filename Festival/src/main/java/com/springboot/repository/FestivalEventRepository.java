@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface FestivalEventRepository extends JpaRepository<FestivalEvent, Long> {
 
@@ -24,29 +25,42 @@ public interface FestivalEventRepository extends JpaRepository<FestivalEvent, Lo
            "JOIN FETCH e.master m " +
            "WHERE e.fstvlStart BETWEEN :start AND :end " +
            "ORDER BY e.fstvlStart")
-    List<FestivalEvent> findByStartBetween(@Param("start") LocalDate start, 
-                                           @Param("end") LocalDate end, 
+    List<FestivalEvent> findByStartBetween(@Param("start") LocalDate start,
+                                           @Param("end") LocalDate end,
                                            Pageable pageable);
 
-    // 기간이 겹치는 축제 조회
+    // 기간이 겹치는 축제 조회 (예상 축제 포함 - 캘린더용)
     @Query("SELECT e FROM FestivalEvent e " +
-           "JOIN FETCH e.master m " +
+           "LEFT JOIN FETCH e.master m " +
            "WHERE e.fstvlEnd >= :start AND e.fstvlStart <= :end " +
            "ORDER BY e.fstvlStart")
-    List<FestivalEvent> findOverlapping(@Param("start") LocalDate start, 
+    List<FestivalEvent> findOverlapping(@Param("start") LocalDate start,
                                         @Param("end") LocalDate end);
 
     // fcltyNm으로 검색 (FestivalPatternService용)
     @Query("SELECT e FROM FestivalEvent e " +
-           "JOIN FETCH e.master m " +
+           "LEFT JOIN FETCH e.master m " +
            "WHERE e.fcltyNm LIKE %:keyword% " +
            "ORDER BY e.fstvlStart ASC")
     List<FestivalEvent> findByFcltyNmContaining(@Param("keyword") String keyword);
-    
+
     // Master와 날짜로 검색 (중복 체크용)
     List<FestivalEvent> findByMasterAndFstvlStartAndFstvlEnd(
-        FestivalMaster master, 
-        LocalDate fstvlStart, 
+        FestivalMaster master,
+        LocalDate fstvlStart,
+        LocalDate fstvlEnd
+    );
+
+    // 특정 Master의 모든 이벤트 조회 (패턴 분석용)
+    @Query("SELECT e FROM FestivalEvent e LEFT JOIN FETCH e.master WHERE e.master = :master ORDER BY e.fstvlStart ASC")
+    List<FestivalEvent> findByMaster(@Param("master") FestivalMaster master);
+
+    Optional<FestivalEvent> findTopByOrderByFstvlStartDesc();
+
+    // 중복 체크용 메서드 (예상 축제 저장 전 확인)
+    boolean existsByFcltyNmAndFstvlStartAndFstvlEnd(
+        String fcltyNm,
+        LocalDate fstvlStart,
         LocalDate fstvlEnd
     );
 }

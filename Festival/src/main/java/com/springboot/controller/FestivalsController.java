@@ -8,6 +8,8 @@ import com.springboot.dto.FestivalMarker;
 import com.springboot.dto.ReviewResponse;
 import com.springboot.repository.FestivalEventRepository;
 import com.springboot.repository.FestivalReviewRepository;
+import com.springboot.service.FestivalPatternService;
+import com.springboot.service.FestivalPatternService.FestivalPatternResult;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
@@ -29,7 +32,8 @@ import java.util.stream.Stream;
 public class FestivalsController {
 
     private final FestivalEventRepository eventRepository;
-    private final FestivalReviewRepository reviewRepository;  // ✅ 추가
+    private final FestivalReviewRepository reviewRepository;
+    private final FestivalPatternService patternService;
 
     // 메인 페이지
     @GetMapping
@@ -53,7 +57,7 @@ public class FestivalsController {
         return "festivals-home";
     }
 
-    // 리스트 기반 검색 화면
+    // 리스트 기반 검색 화면 (진행 중인 축제만 기본 표시)
     @GetMapping("/list")
     public String list(
             @RequestParam(name = "region", required = false) String region,
@@ -64,11 +68,14 @@ public class FestivalsController {
             @RequestParam(name = "category", required = false) String category,
             @RequestParam(name = "congestion", required = false) String congestion,
             @RequestParam(name = "viewYear", required = false) Integer viewYear,
-            @RequestParam(name = "mapMode", required = false, defaultValue = "ongoing") String mapMode,
+            @RequestParam(name = "showAll", required = false, defaultValue = "false") String showAll,
             Model model
     ) {
         LocalDate today = LocalDate.now();
         int currentYear = today.getYear();
+
+        // showAll이 true가 아니면 진행 중인 축제만 표시
+        boolean displayAll = "true".equalsIgnoreCase(showAll);
 
         int year;
         if (viewYear != null) year = viewYear;
@@ -79,7 +86,21 @@ public class FestivalsController {
         LocalDate rangeStart = (startDate != null) ? startDate : LocalDate.of(year, 1, 1);
         LocalDate rangeEnd   = (endDate != null)   ? endDate   : LocalDate.of(year, 12, 31);
 
-        List<FestivalEvent> base = eventRepository.findOverlapping(rangeStart, rangeEnd);
+        List<FestivalEvent> base;
+        
+        if (displayAll) {
+            // 전체 축제 조회
+            base = eventRepository.findOverlapping(rangeStart, rangeEnd);
+        } else {
+            // 진행 중인 축제만 조회
+            base = eventRepository.findOverlapping(rangeStart, rangeEnd)
+                    .stream()
+                    .filter(e -> {
+                        FestivalStatus status = calculateStatus(e, today);
+                        return status == FestivalStatus.ONGOING;
+                    })
+                    .collect(Collectors.toList());
+        }
 
         Stream<FestivalEvent> stream = base.stream();
 
@@ -112,8 +133,6 @@ public class FestivalsController {
                         Comparator.nullsLast(Comparator.naturalOrder()))
         );
 
-        boolean showAllOnMap = "all".equalsIgnoreCase(mapMode);
-
         List<FestivalMarker> markers = list.stream()
                 .map(e -> {
                     FestivalMaster m = e.getMaster();
@@ -134,7 +153,6 @@ public class FestivalsController {
                     );
                 })
                 .filter(Objects::nonNull)
-                .filter(marker -> showAllOnMap || "ONGOING".equalsIgnoreCase(marker.getStatus()))
                 .collect(Collectors.toList());
 
         List<String> regions = List.of("서울", "부산", "울산", "경남", "기타");
@@ -142,7 +160,7 @@ public class FestivalsController {
         model.addAttribute("today", today);
         model.addAttribute("festivals", list);
         model.addAttribute("markers", markers);
-        model.addAttribute("mapMode", mapMode);
+        model.addAttribute("showAll", showAll);
 
         model.addAttribute("year", year);
         model.addAttribute("region", region);
@@ -156,12 +174,13 @@ public class FestivalsController {
         return "list";
     }
 
-    // 캘린더
+    // 캘린더 (패턴 분석 기능 통합)
     @GetMapping("/calendar")
     public String calendar(
             @RequestParam(name = "year", required = false) Integer yearParam,
             @RequestParam(name = "month", required = false) Integer monthParam,
             @RequestParam(name = "day", required = false) Integer dayParam,
+            @RequestParam(name = "mode", required = false, defaultValue = "all") String mode,
             Model model
     ) {
         LocalDate today = LocalDate.now();
@@ -181,11 +200,24 @@ public class FestivalsController {
         YearMonth prevMonth = yearMonth.minusMonths(1);
         YearMonth nextMonth = yearMonth.plusMonths(1);
 
-        List<FestivalEvent> monthEvents = eventRepository.findOverlapping(monthStart, monthEnd);
+        // 실제 + 예상 축제 모두 조회
+        List<FestivalEvent> allEvents = eventRepository.findOverlapping(monthStart, monthEnd);
 
+        // 모드에 따라 필터링
+        if ("real".equalsIgnoreCase(mode)) {
+            allEvents = allEvents.stream()
+                    .filter(e -> e.getFcltyNm() == null || !e.getFcltyNm().startsWith("[예상]"))
+                    .collect(Collectors.toList());
+        } else if ("expected".equalsIgnoreCase(mode)) {
+            allEvents = allEvents.stream()
+                    .filter(e -> e.getFcltyNm() != null && e.getFcltyNm().startsWith("[예상]"))
+                    .collect(Collectors.toList());
+        }
+
+        // festivalMap 생성 (날짜별로 축제 그룹화)
         Map<LocalDate, List<FestivalEvent>> festivalMap = new HashMap<>();
 
-        for (FestivalEvent e : monthEvents) {
+        for (FestivalEvent e : allEvents) {
             LocalDate begin = e.getFstvlStart();
             LocalDate end = e.getFstvlEnd();
             if (begin == null || end == null) continue;
@@ -198,6 +230,7 @@ public class FestivalsController {
             }
         }
 
+        // 각 날짜별 축제 정렬
         for (List<FestivalEvent> events : festivalMap.values()) {
             events.sort(Comparator
                     .comparing(FestivalEvent::getFstvlStart, Comparator.nullsLast(LocalDate::compareTo))
@@ -205,6 +238,7 @@ public class FestivalsController {
             );
         }
 
+        // 선택된 날짜 결정
         LocalDate selectedDate;
         if (dayParam != null) {
             try {
@@ -220,8 +254,45 @@ public class FestivalsController {
             }
         }
 
+        // ☆☆☆ 이제 여기서 dailyFestivals를 가져옴 (festivalMap이 생성된 후!)
         List<FestivalEvent> dailyFestivals = festivalMap.getOrDefault(selectedDate, Collections.emptyList());
 
+        // 디버깅 로그
+        System.out.println("===== 캘린더 디버깅 =====");
+        System.out.println("조회 기간: " + monthStart + " ~ " + monthEnd);
+        System.out.println("선택된 날짜: " + selectedDate);
+        System.out.println("해당 날짜의 축제 수: " + dailyFestivals.size());
+        dailyFestivals.forEach(f -> 
+            System.out.println("  - " + f.getFcltyNm() + " (" + f.getFstvlStart() + " ~ " + f.getFstvlEnd() + ")")
+        );
+        System.out.println("========================");
+
+        // 패턴 분석 추가
+        List<DailyPatternInfo> dailyPatterns = new ArrayList<>();
+        
+        for (FestivalEvent event : dailyFestivals) {
+            FestivalMaster master = event.getMaster();
+            if (master == null) continue;
+
+            FestivalPatternResult pattern = patternService.analyzeFestivalPattern(master, 2019, 2025);
+
+            if (pattern.isValid()) {
+                dailyPatterns.add(new DailyPatternInfo(
+                    event.getId(),
+                    master.getFstvlNm(),
+                    event.getFstvlStart(),
+                    event.getFstvlEnd(),
+                    pattern
+                ));
+            }
+        }
+
+        dailyPatterns.sort(Comparator
+            .comparing(DailyPatternInfo::getPatternConfidence).reversed()
+            .thenComparing(DailyPatternInfo::getFestivalName)
+        );
+
+        // Model에 데이터 추가
         model.addAttribute("calendarStart", monthStart);
         model.addAttribute("calendarEnd", monthEnd);
         model.addAttribute("festivalMap", festivalMap);
@@ -236,17 +307,18 @@ public class FestivalsController {
 
         model.addAttribute("selectedDate", selectedDate);
         model.addAttribute("dailyFestivals", dailyFestivals);
+        model.addAttribute("dailyPatterns", dailyPatterns);
+        model.addAttribute("mode", mode);
 
         return "calendar";
     }
 
-    // ✅ 상세 페이지 (리뷰 목록 추가)
+    // 상세 페이지 (리뷰 목록 추가)
     @GetMapping("/{eventId}")
     public String detail(@PathVariable("eventId") Long eventId, HttpSession session, Model model) {
         FestivalEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NoSuchElementException("FestivalEvent not found: " + eventId));
 
-        // ✅ 리뷰 목록 조회 및 추가
         List<ReviewResponse> reviews = reviewRepository
                 .findByEventOrderByCreatedAtDesc(event)
                 .stream()
@@ -254,7 +326,7 @@ public class FestivalsController {
                 .collect(Collectors.toList());
 
         model.addAttribute("festival", event);
-        model.addAttribute("reviews", reviews);  // ✅ 추가
+        model.addAttribute("reviews", reviews);
         
         Member member = (Member) session.getAttribute("member");
         if (member != null) {
@@ -265,7 +337,6 @@ public class FestivalsController {
     }
 
     // ===== helpers =====
-
     private Stream<FestivalEvent> applyContainsFilter(Stream<FestivalEvent> stream, String keyword) {
         if (keyword == null || keyword.isBlank()) return stream;
         String kw = keyword.trim();
@@ -293,5 +364,65 @@ public class FestivalsController {
 
     private static String safe(String s) {
         return (s == null) ? "" : s;
+    }
+
+    /**
+     * 날짜별 패턴 분석 정보를 담는 내부 클래스
+     */
+    public static class DailyPatternInfo {
+        private final Long eventId;
+        private final String festivalName;
+        private final LocalDate startDate;
+        private final LocalDate endDate;
+        private final FestivalPatternResult pattern;
+
+        public DailyPatternInfo(Long eventId, String festivalName, 
+                               LocalDate startDate, LocalDate endDate,
+                               FestivalPatternResult pattern) {
+            this.eventId = eventId;
+            this.festivalName = festivalName;
+            this.startDate = startDate;
+            this.endDate = endDate;
+            this.pattern = pattern;
+        }
+
+        public Long getEventId() { return eventId; }
+        public String getFestivalName() { return festivalName; }
+        public LocalDate getStartDate() { return startDate; }
+        public LocalDate getEndDate() { return endDate; }
+        public FestivalPatternResult getPattern() { return pattern; }
+        
+        // 편의 메서드들
+        public int getPatternConfidence() { 
+            return pattern.getPatternConfidence(); 
+        }
+        
+        public String getExpectedPeriod() { 
+            return pattern.getExpectedPeriod(); 
+        }
+        
+        public int getOccurrenceCount() { 
+            return pattern.getOccurrenceCount(); 
+        }
+        
+        public String getYears() { 
+            return pattern.getYears(); 
+        }
+        
+        public String getMonthConsistency() { 
+            return pattern.getMonthConsistency(); 
+        }
+        
+        public String getWeekConsistency() { 
+            return pattern.getWeekConsistency(); 
+        }
+        
+        public String getDayConsistency() { 
+            return pattern.getDayConsistency(); 
+        }
+        
+        public int getAverageDuration() { 
+            return pattern.getAverageDuration(); 
+        }
     }
 }

@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Entity
@@ -51,14 +54,14 @@ public class FestivalMaster {
     private String firstImageUrl;
 
     @Column(name = "first_image_url2", length = 500)
-    private String firstImageUrl2;  // 썸네일 이미지
+    private String firstImageUrl2;
     
     @Column(name = "original_image_url", length = 500)
-    private String originalImageUrl;  // 원본 고화질 이미지
+    private String originalImageUrl;
 
     @Lob
     @Column(name = "image_urls")
-    private String imageUrls;  // JSON 배열: ["url1", "url2", ...]
+    private String imageUrls;
 
     @Lob
     @Column(name = "overview")
@@ -69,4 +72,54 @@ public class FestivalMaster {
 
     @Column(name = "detail_loaded")
     private Boolean detailLoaded = false;
+
+    // ===== 개최 패턴 분석 필드 (내부 사용) =====
+    
+    /**
+     * 분석된 샘플 수
+     */
+    @Column(name = "pattern_sample_count")
+    private Integer patternSampleCount;
+
+    /**
+     * 예상 개최 월 (1~12)
+     */
+    @Column(name = "expected_month")
+    private Integer expectedMonth;
+
+    /**
+     * 예상 개최 주차 (1~5)
+     */
+    @Column(name = "expected_week_of_month")
+    private Integer expectedWeekOfMonth;
+
+    /**
+     * 예상 개최 요일
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "expected_day_of_week")
+    private DayOfWeek expectedDayOfWeek;
+
+    /**
+     * 예상 지속 기간 (일 단위)
+     */
+    @Column(name = "expected_duration_days")
+    private Integer expectedDurationDays;
+
+    /**
+     * 패턴 마지막 업데이트 시각
+     */
+    @Column(name = "pattern_last_updated")
+    private LocalDateTime patternLastUpdated;
+
+    /**
+     * 패턴 데이터 존재 여부 확인
+     */
+    public boolean hasPattern() {
+        return patternSampleCount != null 
+            && patternSampleCount >= 2
+            && expectedMonth != null 
+            && expectedWeekOfMonth != null 
+            && expectedDayOfWeek != null;
+    }
 }
