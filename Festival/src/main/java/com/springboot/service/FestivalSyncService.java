@@ -171,12 +171,18 @@ public class FestivalSyncService {
         log.info("[Image Sync] year={} 완료: 업데이트={}, 스킵={}", year, updated, skipped);
     }
 
+    private static String trimToNull(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
+    }
+
     private FestivalMaster findOrCreateMaster(TourApiDto.Item item) {
         String contentId = item.getContentid();
         if (contentId == null || contentId.isBlank()) {
             return null;
         }
-        
+
         Long contentIdLong;
         try {
             contentIdLong = Long.parseLong(contentId);
@@ -184,36 +190,47 @@ public class FestivalSyncService {
             log.warn("Invalid contentId: {}", contentId);
             return null;
         }
-        
+
         FestivalMaster master = masterRepository.findByTourApiContentId(contentIdLong)
-            .orElse(null);
-        
+                .orElse(null);
+
         if (master == null) {
             master = new FestivalMaster();
             master.setTourApiContentId(contentIdLong);
         }
-        
+
         // 기본 정보 업데이트
         master.setFstvlNm(item.getTitle());
         master.setAddr1(item.getAddr1());
-        master.setFirstImageUrl(item.getFirstimage());
-        
-        // firstimage2 저장
-        if (item.getFirstimage2() != null && !item.getFirstimage2().isBlank()) {
-            master.setFirstImageUrl2(item.getFirstimage2());
+
+        // ✅ 이미지: 잠금이면 아예 건드리지 않기
+        if (!Boolean.TRUE.equals(master.getImageLocked())) {
+
+            // ✅ 빈값이면 덮어쓰기 X, 값 있을 때만 업데이트
+            String img1 = trimToNull(item.getFirstimage());
+            if (img1 != null) {
+                master.setFirstImageUrl(img1);
+            }
+
+            String img2 = trimToNull(item.getFirstimage2());
+            if (img2 != null) {
+                master.setFirstImageUrl2(img2);
+            }
         }
-        
-        // 좌표 정보
-        if (item.getMapx() != null && !item.getMapx().isBlank()) {
-            master.setMapX(parseDouble(item.getMapx()));
+
+        // 좌표 정보 (이건 이미지랑 무관하니 그대로 유지)
+        String mapx = trimToNull(item.getMapx());
+        if (mapx != null) {
+            master.setMapX(parseDouble(mapx));
         }
-        if (item.getMapy() != null && !item.getMapy().isBlank()) {
-            master.setMapY(parseDouble(item.getMapy()));
+
+        String mapy = trimToNull(item.getMapy());
+        if (mapy != null) {
+            master.setMapY(parseDouble(mapy));
         }
-        
+
         return masterRepository.save(master);
     }
-
     private boolean createOrUpdateEvent(FestivalMaster master, TourApiDto.Item item) {
         if (master == null || master.getId() == null) {
             log.warn("Master ID가 null입니다. contentId={}", item.getContentid());

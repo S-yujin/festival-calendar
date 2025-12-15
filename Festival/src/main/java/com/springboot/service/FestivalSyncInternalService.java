@@ -70,7 +70,17 @@ public class FestivalSyncInternalService {
         // 데이터 업데이트
         master.setFstvlNm(item.getTitle());
         master.setAddr1(item.getAddr1());
-        master.setFirstImageUrl(item.getFirstimage());
+     
+        // 이미지: 잠금이면 아예 건드리지 않기
+        if (!Boolean.TRUE.equals(master.getImageLocked())) {
+
+            // 빈값이면 덮어쓰기 X, 값 있을 때만 업데이트
+            String img1 = trimToNull(item.getFirstimage());
+            if (img1 != null) master.setFirstImageUrl(img1);
+
+            String img2 = trimToNull(item.getFirstimage2());
+            if (img2 != null) master.setFirstImageUrl2(img2);
+        }
         
         if (item.getMapx() != null && !item.getMapx().isBlank()) {
             master.setMapX(parseDouble(item.getMapx()));
@@ -136,5 +146,11 @@ public class FestivalSyncInternalService {
         } catch (Exception e) {
             return null;
         }
+    }
+    
+    private static String trimToNull(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
     }
 }

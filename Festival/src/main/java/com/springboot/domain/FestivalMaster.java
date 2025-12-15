@@ -72,6 +72,9 @@ public class FestivalMaster {
 
     @Column(name = "detail_loaded")
     private Boolean detailLoaded = false;
+    
+    @Column(name = "image_locked")
+    private Boolean imageLocked = false;
 
     // ===== 개최 패턴 분석 필드 (내부 사용) =====
     
