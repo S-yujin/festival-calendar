@@ -190,7 +190,7 @@
     zoom: 7
   });
 
-  // ✅ 지도 div 크기 잡힌 뒤 리사이즈 한번
+  // 지도 div 크기 잡힌 뒤 리사이즈 한번
   setTimeout(function () {
     naver.maps.Event.trigger(map, 'resize');
   }, 0);
@@ -203,11 +203,11 @@
       var lat = Number(m.lat);
       var lng = Number(m.lng);
 
-      // ✅ null/NaN/0,0 제거
+      // null/NaN/0,0 제거
       if (!isFinite(lat) || !isFinite(lng)) return;
       if (lat === 0 || lng === 0) return;
 
-      // ✅ 대충 한국 영역만(이상치 제거)
+      // 대충 한국 영역만(이상치 제거)
       if (lat < 33 || lat > 39.5 || lng < 124 || lng > 132) return;
 
       validCount++;
@@ -241,7 +241,7 @@
       bounds.extend(position);
     });
 
-    // ✅ 유효한 마커가 있을 때만 fitBounds
+    // 유효한 마커가 있을 때만 fitBounds
     if (validCount > 0) {
       // padding 주면 오른쪽 패널에서도 보기 좋음
       map.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
