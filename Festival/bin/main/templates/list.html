@@ -157,10 +157,11 @@
                                 00.00 ~ 00.00
                             </p>
 
-                            <p class="card-loc"
-                               th:text="${f.master != null ? (f.master.ctprvnNm + ' ' + f.master.signguNm) : ''}">
-                                지역
-                            </p>
+							<p class="card-loc"
+							   th:if="${f.master != null and f.master.ctprvnNm != null and f.master.signguNm != null 
+							           and !f.master.ctprvnNm.isBlank() and !f.master.signguNm.isBlank()}"
+							   th:text="${f.master.ctprvnNm + ' ' + f.master.signguNm}">
+							</p>
                         </div>
                     </a>
                 </article>
