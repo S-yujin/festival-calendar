@@ -26,12 +26,12 @@
 
                 <a th:href="@{/members/mypage}" style="margin-left: 8px;">마이페이지</a>
 
-                <form th:action="@{/logout}" method="post" class="logout-form">
-                    <input th:if="${_csrf != null}" type="hidden"
-                           th:name="${_csrf.parameterName}"
-                           th:value="${_csrf.token}" />
-                    <button type="submit">로그아웃</button>
-                </form>
+				<form th:action="@{/auth/logout}" method="post" class="logout-form">
+				    <input th:if="${_csrf != null}" type="hidden"
+				           th:name="${_csrf.parameterName}"
+				           th:value="${_csrf.token}" />
+				    <button type="submit">로그아웃</button>
+				</form>
             </div>
 
         </div>
