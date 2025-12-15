@@ -19,7 +19,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
@@ -67,6 +66,7 @@ public class FestivalsController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(name = "category", required = false) String category,
             @RequestParam(name = "congestion", required = false) String congestion,
+            @RequestParam(name = "q", required = false) String keyword,
             @RequestParam(name = "viewYear", required = false) Integer viewYear,
             @RequestParam(name = "showAll", required = false, defaultValue = "false") String showAll,
             Model model
@@ -117,9 +117,33 @@ public class FestivalsController {
 
         stream = applyContainsFilter(stream, category);
         stream = applyContainsFilter(stream, congestion);
-
+        
+        // 키워드 검색 (축제명/주소/overview + event fcltyNm까지)
+        if (keyword != null && !keyword.isBlank()) {
+            String kw = keyword.trim();
+            stream = stream.filter(e -> {
+                FestivalMaster m = e.getMaster();
+                return safe(e.getFcltyNm()).contains(kw)
+                        || (m != null && (
+                            safe(m.getFstvlNm()).contains(kw)
+                            || safe(m.getAddr1()).contains(kw)
+                            || safe(m.getOverview()).contains(kw)
+                        ));
+            });
+        }
+        
         List<FestivalEvent> list = stream.collect(Collectors.toList());
-
+        
+     	// 혼잡도 계산 후 필터
+        Map<Long, String> congestionMap = buildCongestionMap(list);
+        if (congestion != null && !congestion.isBlank()) {
+            String c = congestion.trim(); // "여유" / "보통" / "혼잡"
+            list = list.stream()
+                    .filter(e -> c.equals(congestionMap.getOrDefault(e.getId(), "")))
+                    .collect(Collectors.toList());
+        }
+        
+        // 정렬
         list.sort(Comparator
                 .comparing((FestivalEvent e) -> {
                     FestivalStatus status = calculateStatus(e, today);
@@ -132,7 +156,8 @@ public class FestivalsController {
                 .thenComparing(FestivalEvent::getFstvlStart,
                         Comparator.nullsLast(Comparator.naturalOrder()))
         );
-
+        
+        // 마커
         List<FestivalMarker> markers = list.stream()
                 .map(e -> {
                     FestivalMaster m = e.getMaster();
@@ -168,9 +193,12 @@ public class FestivalsController {
         model.addAttribute("endDate", endDate);
         model.addAttribute("category", category);
         model.addAttribute("congestion", congestion);
+        model.addAttribute("keyword", keyword);
         model.addAttribute("regions", regions);
         model.addAttribute("isFutureYear", year > currentYear);
-
+        
+        model.addAttribute("congestionMap", congestionMap);
+        
         return "list";
     }
 
@@ -254,7 +282,7 @@ public class FestivalsController {
             }
         }
 
-        // ☆☆☆ 이제 여기서 dailyFestivals를 가져옴 (festivalMap이 생성된 후!)
+        // 이제 여기서 dailyFestivals를 가져옴 (festivalMap이 생성된 후!)
         List<FestivalEvent> dailyFestivals = festivalMap.getOrDefault(selectedDate, Collections.emptyList());
 
         // 디버깅 로그
@@ -365,10 +393,46 @@ public class FestivalsController {
     private static String safe(String s) {
         return (s == null) ? "" : s;
     }
+    
+   // 같은 시군구 + 기간 겹치는 축제 수로 혼잡도 추정
+    private Map<Long, String> buildCongestionMap(List<FestivalEvent> list) {
+        Map<Long, String> result = new HashMap<>();
+        Map<String, List<FestivalEvent>> byArea = list.stream()
+                .collect(Collectors.groupingBy(e -> {
+                    FestivalMaster m = e.getMaster();
+                    return safe(m != null ? m.getCtprvnNm() : "") + "|" + safe(m != null ? m.getSignguNm() : "");
+                }));
 
-    /**
-     * 날짜별 패턴 분석 정보를 담는 내부 클래스
-     */
+        for (List<FestivalEvent> group : byArea.values()) {
+            for (FestivalEvent e : group) {
+                int overlapCount = 0;
+                for (FestivalEvent other : group) {
+                    if (e == other) continue;
+                    if (overlaps(e.getFstvlStart(), e.getFstvlEnd(), other.getFstvlStart(), other.getFstvlEnd())) {
+                        overlapCount++;
+                    }
+                }
+
+                // 본인 포함하려면 +1
+                int n = overlapCount + 1;
+
+                String label;
+                if (n <= 2) label = "여유";
+                else if (n <= 6) label = "보통";
+                else label = "혼잡";
+
+                result.put(e.getId(), label);
+            }
+        }
+        return result;
+    }
+
+    private boolean overlaps(LocalDate aStart, LocalDate aEnd, LocalDate bStart, LocalDate bEnd) {
+        if (aStart == null || aEnd == null || bStart == null || bEnd == null) return false;
+        return !aEnd.isBefore(bStart) && !bEnd.isBefore(aStart);
+    }
+
+    // 날짜별 패턴 분석 정보를 담는 내부 클래스
     public static class DailyPatternInfo {
         private final Long eventId;
         private final String festivalName;

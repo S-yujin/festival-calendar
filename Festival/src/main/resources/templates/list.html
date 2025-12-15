@@ -41,19 +41,7 @@
             <input type="date" id="endDate" name="endDate"
                    th:value="${endDate}" class="filter-btn">
         </div>
-
-        <!-- 유형 -->
-        <div>
-            <label for="category" style="font-size:13px; color:#555;">유형</label>
-            <select id="category" name="category" class="filter-btn">
-                <option value="">전체</option>
-                <option value="음악" th:selected="${category}=='음악'">음악/공연</option>
-                <option value="먹거리" th:selected="${category}=='먹거리'">먹거리/야시장</option>
-                <option value="문화" th:selected="${category}=='문화'">문화/전통</option>
-                <option value="꽃" th:selected="${category}=='꽃'">꽃/자연</option>
-            </select>
-        </div>
-
+		
         <!-- 혼잡도 -->
         <div>
             <label for="congestion" style="font-size:13px; color:#555;">혼잡도</label>
@@ -101,18 +89,21 @@
                 </div>
 
                 <!-- 전체/진행중 토글 버튼 -->
-                <div class="view-toggle">
-                    <a class="toggle-btn"
-                       th:classappend="${showAll != 'true' ? ' active' : ''}"
-                       th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate}, category=${category}, congestion=${congestion}, showAll='false')}">
-                        진행 중만
-                    </a>
-                    <a class="toggle-btn"
-                       th:classappend="${showAll == 'true' ? ' active' : ''}"
-                       th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate}, category=${category}, congestion=${congestion}, showAll='true')}">
-                        전체 보기
-                    </a>
-                </div>
+				<div class="view-toggle">
+				  <a class="toggle-btn"
+				     th:classappend="${showAll != 'true' ? ' active' : ''}"
+				     th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate},
+				               congestion=${congestion}, q=${keyword}, showAll='false')}">
+				    진행 중만
+				  </a>
+
+				  <a class="toggle-btn"
+				     th:classappend="${showAll == 'true' ? ' active' : ''}"
+				     th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate},
+				               congestion=${congestion}, q=${keyword}, showAll='true')}">
+				    전체 보기
+				  </a>
+				</div>
             </div>
         </section>
 
