@@ -8,18 +8,14 @@
 </head>
 <body>
 
-<!-- 공통 헤더 -->
 <div th:replace="~{fragments/header :: header}"></div>
 
-<!-- 상단 필터 바 -->
 <div class="filter-bar">
     <form th:action="@{/festivals/list}" method="get"
           style="display:flex; gap:8px; width:100%; align-items:center;">
 
-        <!-- 숨겨진 필드: showAll 유지 -->
         <input type="hidden" name="showAll" th:value="${showAll}">
 
-        <!-- 지역 -->
         <div>
             <label for="region" style="font-size:13px; color:#555;">지역</label>
             <select id="region" name="region" class="filter-btn">
@@ -32,7 +28,6 @@
             </select>
         </div>
 
-        <!-- 기간 -->
         <div>
             <label for="startDate" style="font-size:13px; color:#555;">기간</label>
             <input type="date" id="startDate" name="startDate"
@@ -42,7 +37,6 @@
                    th:value="${endDate}" class="filter-btn">
         </div>
 		
-        <!-- 혼잡도 -->
         <div>
             <label for="congestion" style="font-size:13px; color:#555;">혼잡도</label>
             <select id="congestion" name="congestion" class="filter-btn">
@@ -53,14 +47,12 @@
             </select>
         </div>
 
-        <!-- 키워드 -->
         <div style="flex:1;">
             <label for="keyword" style="font-size:13px; color:#555;">키워드</label>
             <input type="text" id="keyword" name="q"
                    th:value="${keyword}" class="filter-btn" style="width:100%;">
         </div>
 
-        <!-- 검색/초기화 -->
         <div class="filter-right">
             <button type="submit" class="filter-btn"
                     style="background:#6c2bd9; color:#fff; border-color:#6c2bd9;">
@@ -71,10 +63,8 @@
     </form>
 </div>
 
-<!-- 2컬럼 레이아웃: 왼쪽 리스트, 오른쪽 지도 -->
 <div class="page-2col">
 
-    <!-- 왼쪽: 리스트 패널 -->
     <main class="list-panel">
         <section>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -88,8 +78,7 @@
                     </p>
                 </div>
 
-                <!-- 전체/진행중 토글 버튼 -->
-				<div class="view-toggle">
+                <div class="view-toggle">
 				  <a class="toggle-btn"
 				     th:classappend="${showAll != 'true' ? ' active' : ''}"
 				     th:href="@{/festivals/list(region=${region}, startDate=${startDate}, endDate=${endDate},
@@ -107,26 +96,22 @@
             </div>
         </section>
 
-        <!-- 결과 없을 때 -->
         <p th:if="${#lists.isEmpty(festivals)}" style="margin-top:16px;">
             조건에 맞는 축제가 없습니다.
         </p>
 
-        <!-- 카드 리스트 -->
         <section th:if="${!#lists.isEmpty(festivals)}" style="margin-top:16px;">
             <div class="card-list">
                 <article class="festival-card" th:each="f : ${festivals}">
                     <a th:href="@{/festivals/{id}(id=${f.id})}">
 
-                        <!-- 인네일 -->
                         <div class="card-thumb">
-							<img th:src="${(f.master != null and f.master.firstImageUrl != null)
-							              ? f.master.firstImageUrl
-							              : @{/img/placeholder.svg}}"
+                            <img th:src="${f.master != null and f.master.firstImageUrl != null}
+							              ? ${f.master.firstImageUrl}
+							              : @{/img/placeholder.svg}"
 							     alt="축제 이미지">
                         </div>
 
-                        <!-- 텍스트 영역 -->
                         <div class="card-body">
                             <span class="status-badge"
                                   th:with="status=${T(com.springboot.domain.FestivalStatus).valueOf(
@@ -161,7 +146,6 @@
         </section>
     </main>
 
-    <!-- 오른쪽: 지도 패널 -->
     <aside class="map-panel">
         <div class="map-toolbar">
             <span style="font-size: 14px; font-weight: 600; color: #333;">지도에서 보기</span>
@@ -176,11 +160,9 @@
 
 </div>
 
-<!-- 네이버 지도 API -->
 <script type="text/javascript"
         src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=imrp8lidfv"></script>
 
-<!-- 네이버 지도 위에 마커 그리기 -->
 <script th:inline="javascript">
 /*<![CDATA[*/
   var markers = /*[[${markers}]]*/ [];
